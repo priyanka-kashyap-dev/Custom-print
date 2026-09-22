@@ -1,0 +1,121 @@
+.productSection {
+  padding: 100px 0;
+  background: var(--surface-color);
+}
+
+.header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 60px;
+}
+
+.title {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+  color: var(--text-color);
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 32px;
+}
+
+.card {
+  background: #fff;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+}
+
+.imagePlaceholder {
+  height: 240px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.placeholderText {
+  color: var(--text-color);
+  opacity: 0.6;
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.cardContent {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.cardDescription {
+  font-size: 0.95rem;
+  color: var(--text-light);
+  margin-bottom: 24px;
+  line-height: 1.5;
+  flex-grow: 1;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.price {
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 1.05rem;
+}
+
+.customizeBtn {
+  background: rgba(214, 184, 176, 0.15); /* primary color with low opacity */
+  color: var(--primary-hover);
+  padding: 8px 16px;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.customizeBtn:hover {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .productSection {
+    padding: 60px 0;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}

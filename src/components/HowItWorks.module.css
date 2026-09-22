@@ -1,0 +1,93 @@
+.section {
+  padding: 100px 0;
+  background: var(--background-color);
+}
+
+.header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 60px;
+}
+
+.title {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+  color: var(--text-color);
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+.stepsContainer {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.step {
+  flex: 1;
+  text-align: center;
+  padding: 0 20px;
+  position: relative;
+}
+
+.iconWrapper {
+  width: 80px;
+  height: 80px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  z-index: 2;
+  transition: var(--transition);
+}
+
+.step:hover .iconWrapper {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-md);
+  color: #fff;
+  background: var(--primary-color);
+}
+
+.connector {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: calc(100% - 40px);
+  height: 2px;
+  background: var(--border-color);
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.stepTitle {
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+  color: var(--text-color);
+}
+
+.stepDescription {
+  font-size: 0.95rem;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .connector {
+    display: none;
+  }
+  .stepsContainer {
+    flex-direction: column;
+    gap: 40px;
+  }
+}

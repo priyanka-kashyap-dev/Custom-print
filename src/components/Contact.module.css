@@ -1,0 +1,171 @@
+.section {
+  padding: 100px 0;
+  background: var(--background-color);
+}
+
+.header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 60px;
+}
+
+.title {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+  color: var(--text-color);
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+.formContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 40px;
+  border: 1px solid var(--border-color);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.inputGroup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.inputField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inputField label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.inputField input,
+.inputField select,
+.inputField textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  background: var(--background-color);
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--text-color);
+  transition: var(--transition);
+}
+
+.inputField input:focus,
+.inputField select:focus,
+.inputField textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(214, 184, 176, 0.2);
+}
+
+.submitButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--text-color);
+  color: #fff;
+  padding: 16px;
+  border-radius: var(--border-radius);
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-top: 16px;
+  transition: var(--transition);
+}
+
+.submitButton:hover:not(:disabled) {
+  background: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.submitButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.errorMessage {
+  padding: 16px;
+  background: rgba(255, 107, 107, 0.1);
+  color: var(--error-color);
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  text-align: center;
+  font-weight: 500;
+}
+
+.successState {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.successIcon {
+  color: var(--success-color);
+  margin-bottom: 24px;
+}
+
+.successState h3 {
+  font-size: 2rem;
+  margin-bottom: 16px;
+  color: var(--text-color);
+}
+
+.successState p {
+  font-size: 1.1rem;
+  color: var(--text-light);
+  margin-bottom: 32px;
+}
+
+.resetButton {
+  background: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 12px 24px;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.resetButton:hover {
+  background: var(--background-color);
+  border-color: var(--text-color);
+}
+
+@media (max-width: 768px) {
+  .inputGroup {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .formContainer {
+    padding: 24px;
+  }
+}
