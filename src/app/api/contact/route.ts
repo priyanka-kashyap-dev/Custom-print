@@ -84,7 +84,7 @@ export async function POST(req: Request) {
     // Send the email using Nodemailer
     const mailOptions = {
       from: `"PrintStyle Website" <${process.env.GMAIL_EMAIL}>`,
-      to: ['priyankakashyap75730@gmail.com', 'shubhamrajvanshi2001@gmail.com'],
+      to: ['pkashyap1506@gmail.com', 'shubhamrajvanshi2001@gmail.com'],
       replyTo: email,
       subject: `🎉 New Website Lead: ${name} is interested in ${product}`,
       html: htmlTemplate,
