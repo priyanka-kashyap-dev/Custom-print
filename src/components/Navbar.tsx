@@ -11,7 +11,7 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, loginWithGoogle, logout, cart, theme, toggleTheme } = useAppContext();
-  
+
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function Navbar() {
       {/* Announcement Bar */}
       <div className={styles.announcementBar}>
         <div className={styles.announcementContact}>
-          <span>📞 +91 98765 43210</span>
+          <span>📞 +91 9026332538</span>
         </div>
         <div className={styles.announcementPromo}>
           Use code <strong>FESTIVE15</strong> for 15% off bulk orders!
@@ -66,7 +66,7 @@ export default function Navbar() {
               <ShoppingCart size={20} />
               {cartItemCount > 0 && <span className={styles.cartBadge}>{cartItemCount}</span>}
             </Link>
-            
+
             {user ? (
               <div className={styles.userMenu}>
                 <Link href="/orders" className={styles.navLink}>Orders</Link>
@@ -74,7 +74,7 @@ export default function Navbar() {
               </div>
             ) : (
               <Link href="/login" className={styles.ctaButton}>
-                <UserIcon size={18} style={{ marginRight: '8px' }}/> Login
+                <UserIcon size={18} style={{ marginRight: '8px' }} /> Login
               </Link>
             )}
           </div>
@@ -102,12 +102,12 @@ export default function Navbar() {
           >
             <ul className={styles.mobileNavLinks}>
               <li>
-                <button 
+                <button
                   onClick={() => { toggleTheme(); setIsMobileMenuOpen(false); }}
                   className={styles.mobileNavLink}
                   style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', justifyContent: 'flex-start' }}
                 >
-                  {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />} 
+                  {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
                   {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
                 </button>
               </li>
