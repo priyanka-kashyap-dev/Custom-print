@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Loader2, Send } from "lucide-react";
+import { CheckCircle2, Loader2, Send, Mic, Smile } from "lucide-react";
+import EmojiPicker from 'emoji-picker-react';
 import styles from "./Contact.module.css";
 
 export default function Contact() {
@@ -15,10 +16,42 @@ export default function Contact() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const onEmojiClick = (emojiObject: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      message: prev.message + emojiObject.emoji,
+    }));
+    setShowEmojiPicker(false);
+  };
+
+  const startListening = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert("Your browser doesn't support voice input.");
+      return;
+    }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setFormData((prev) => ({
+        ...prev,
+        message: prev.message + (prev.message ? " " : "") + transcript,
+      }));
+    };
+    
+    recognition.start();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -159,15 +192,43 @@ export default function Contact() {
 
               <div className={styles.inputField}>
                 <label htmlFor="message">Your Message</label>
-                <textarea
-                  id="message"
-                  name="message"
-                  required
-                  rows={5}
-                  value={formData.message}
-                  onChange={handleChange}
-                  placeholder="Tell us about your custom design or any special requirements..."
-                ></textarea>
+                <div style={{ position: 'relative' }}>
+                  <textarea
+                    id="message"
+                    name="message"
+                    required
+                    rows={5}
+                    value={formData.message}
+                    onChange={handleChange}
+                    placeholder="Tell us about your custom design or any special requirements..."
+                    style={{ paddingRight: '70px' }}
+                  ></textarea>
+                  
+                  <div style={{ position: 'absolute', bottom: '12px', right: '12px', display: 'flex', gap: '12px' }}>
+                    <button 
+                      type="button" 
+                      onClick={startListening} 
+                      style={{ background: 'transparent', color: isListening ? 'var(--error-color)' : 'var(--text-light)', border: 'none', cursor: 'pointer', padding: 0 }} 
+                      title="Voice to Text"
+                    >
+                      <Mic size={20} />
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)} 
+                      style={{ background: 'transparent', color: 'var(--text-light)', border: 'none', cursor: 'pointer', padding: 0 }} 
+                      title="Add Emoji"
+                    >
+                      <Smile size={20} />
+                    </button>
+                  </div>
+
+                  {showEmojiPicker && (
+                    <div style={{ position: 'absolute', bottom: '40px', right: '0', zIndex: 10 }}>
+                      <EmojiPicker onEmojiClick={onEmojiClick} />
+                    </div>
+                  )}
+                </div>
               </div>
 
               {submitStatus === "error" && (
