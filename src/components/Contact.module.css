@@ -24,7 +24,7 @@
 .formContainer {
   max-width: 800px;
   margin: 0 auto;
-  background: #fff;
+  background: var(--surface-color);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-md);
   padding: 40px;
@@ -82,7 +82,7 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background: var(--text-color);
+  background: var(--primary-color);
   color: #fff;
   padding: 16px;
   border-radius: var(--border-radius);

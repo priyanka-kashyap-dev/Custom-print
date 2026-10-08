@@ -2,54 +2,56 @@
 
 import { motion } from "framer-motion";
 import styles from "./Products.module.css";
-import Link from "next/link";
+import { useAppContext } from "@/context/AppContext";
 
 const products = [
   {
     id: 1,
-    title: "Custom T-Shirts",
+    title: "Custom Printed Shirts",
     description: "Premium cotton t-shirts with your unique design or photo.",
-    price: "Starting from $25",
-    color: "#fdfbfb",
+    price: 25,
+    imageColor: "#fdfbfb",
   },
   {
     id: 2,
-    title: "Personalized Cushions",
+    title: "Personalized Pillows",
     description: "Cozy up with memories. Soft cushions featuring your photos.",
-    price: "Starting from $30",
-    color: "#f7f0f6",
+    price: 30,
+    imageColor: "#f7f0f6",
   },
   {
     id: 3,
-    title: "Heart-Shaped Cushions",
+    title: "Heart-Shaped Pillows",
     description: "The perfect romantic gift for your loved one.",
-    price: "Starting from $35",
-    color: "#fae8e8",
+    price: 35,
+    imageColor: "#fae8e8",
   },
   {
     id: 4,
-    title: "Couple Gifts",
-    description: "Matching sets and personalized gifts for couples.",
-    price: "Starting from $40",
-    color: "#f0f4f8",
+    title: "Custom Printed Couches",
+    description: "Unique printed couches to bring your living room to life.",
+    price: 299,
+    imageColor: "#f0f4f8",
   },
   {
     id: 5,
-    title: "Personalized Photo Gifts",
-    description: "Frames, mugs, and more to showcase your favorite moments.",
-    price: "Starting from $15",
-    color: "#fdf8ec",
+    title: "Couple Gifts",
+    description: "Matching sets and personalized gifts for couples.",
+    price: 40,
+    imageColor: "#fdf8ec",
   },
   {
     id: 6,
     title: "Custom Designs",
     description: "Have an idea? We'll help you bring it to life on any product.",
-    price: "Custom Pricing",
-    color: "#f3f0f7",
+    price: 50,
+    imageColor: "#f3f0f7",
   },
 ];
 
 export default function Products() {
+  const { addToCart } = useAppContext();
+
   return (
     <section id="products" className={styles.productSection}>
       <div className={`container ${styles.container}`}>
@@ -86,7 +88,7 @@ export default function Products() {
             >
               <div 
                 className={styles.imagePlaceholder}
-                style={{ backgroundColor: product.color }}
+                style={{ backgroundColor: product.imageColor }}
               >
                 <div className={styles.placeholderText}>{product.title}</div>
               </div>
@@ -94,10 +96,13 @@ export default function Products() {
                 <h3 className={styles.cardTitle}>{product.title}</h3>
                 <p className={styles.cardDescription}>{product.description}</p>
                 <div className={styles.cardFooter}>
-                  <span className={styles.price}>{product.price}</span>
-                  <Link href="#contact" className={styles.customizeBtn}>
-                    Customize
-                  </Link>
+                  <span className={styles.price}>${product.price}</span>
+                  <button 
+                    onClick={() => addToCart(product)}
+                    className={styles.customizeBtn}
+                  >
+                    Add to Cart
+                  </button>
                 </div>
               </div>
             </motion.div>

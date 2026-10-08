@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
+import TrustBadges from "@/components/TrustBadges";
 import Products from "@/components/Products";
 import HowItWorks from "@/components/HowItWorks";
 import CustomDesign from "@/components/CustomDesign";
@@ -11,6 +12,7 @@ export default function Home() {
     <main>
       <Navbar />
       <Hero />
+      <TrustBadges />
       <Products />
       <HowItWorks />
       <CustomDesign />

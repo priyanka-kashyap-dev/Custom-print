@@ -28,7 +28,7 @@ export default function Footer() {
         <div className={styles.grid}>
           <div className={styles.brand}>
             <Link href="/" className={styles.logo}>
-              Lumina<span>Prints</span>
+              Print<span>Style</span>
             </Link>
             <p className={styles.description}>
               Premium custom personalized gifts designed to turn your favorite moments into lasting memories.
@@ -67,7 +67,7 @@ export default function Footer() {
         </div>
         
         <div className={styles.bottom}>
-          <p>&copy; {new Date().getFullYear()} Lumina Prints. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} PrintStyle. All rights reserved.</p>
         </div>
       </div>
     </footer>
