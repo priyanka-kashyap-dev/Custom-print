@@ -4,9 +4,44 @@
   left: 0;
   width: 100%;
   z-index: 1000;
-  padding: 24px 0;
   transition: var(--transition);
   background: transparent;
+}
+
+.announcementBar {
+  background: var(--primary-color);
+  color: white;
+  padding: 8px 24px;
+  font-size: 0.85rem;
+  text-align: center;
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.announcementContact {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.announcementPromo {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .announcementPromo {
+    display: block;
+  }
+}
+
+.announcementPromo strong {
+  color: white;
+  background: rgba(0,0,0,0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
 }
 
 .scrolled {
@@ -22,6 +57,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 16px 0;
 }
 
 .logo {

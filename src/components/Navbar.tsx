@@ -33,25 +33,12 @@ export default function Navbar() {
   return (
     <header className={`${styles.header} ${isScrolled ? styles.scrolled : ""}`}>
       {/* Announcement Bar */}
-      <div style={{
-        background: "var(--primary-color)",
-        color: "white",
-        padding: "8px 24px",
-        fontSize: "0.85rem",
-        textAlign: "center",
-        fontWeight: 500,
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        zIndex: 1001,
-        position: "relative",
-        width: "100%"
-      }}>
-        <div style={{ display: "flex", gap: "1.5rem" }}>
+      <div className={styles.announcementBar}>
+        <div className={styles.announcementContact}>
           <span>📞 +91 98765 43210</span>
         </div>
-        <div style={{ display: "none" }} className="md:block"> {/* Using inline style or basic class logic for responsive text */}
-          Use code <strong style={{ color: "white", background: "var(--primary-color)", padding: "2px 6px", borderRadius: "4px", marginLeft: "4px" }}>FESTIVE15</strong> for 15% off bulk orders!
+        <div className={styles.announcementPromo}>
+          Use code <strong>FESTIVE15</strong> for 15% off bulk orders!
         </div>
       </div>
 

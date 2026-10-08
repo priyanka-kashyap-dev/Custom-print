@@ -1,14 +1,8 @@
 import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-// You must add GMAIL_EMAIL and GMAIL_APP_PASSWORD to your .env.local
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_EMAIL,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
+// Initialize Resend with the API key from environment variables
+const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_key');
 
 export async function POST(req: Request) {
   try {
@@ -81,19 +75,22 @@ export async function POST(req: Request) {
       </html>
     `;
 
-    // Send the email using Nodemailer
-    const mailOptions = {
-      from: `"PrintStyle Website" <${process.env.GMAIL_EMAIL}>`,
+    // Send the email using Resend
+    const { data, error } = await resend.emails.send({
+      from: 'PrintStyle Leads <onboarding@resend.dev>', // Resend's testing domain
       to: ['priyankakashyap75730@gmail.com', 'shubhamrajvanshi2001@gmail.com'],
       replyTo: email,
       subject: `🎉 New Website Lead: ${name} is interested in ${product}`,
       html: htmlTemplate,
-    };
+    });
 
-    const info = await transporter.sendMail(mailOptions);
+    if (error) {
+      console.error('Resend API Error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     return NextResponse.json(
-      { message: 'Email sent successfully', data: info.messageId },
+      { message: 'Email sent successfully', data },
       { status: 200 }
     );
   } catch (error: any) {
