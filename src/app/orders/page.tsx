@@ -15,8 +15,22 @@ export default function OrdersPage() {
     return (
       <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", paddingTop: "80px" }}>
         <Navbar />
-        <div className="container" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-          <h2>Please login to view your orders</h2>
+        <div className="container" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: "1rem" }}>
+          <h2>Please sign in to view your orders</h2>
+          <p style={{ color: "var(--text-light)" }}>Sign in with your Google account to track your orders and order history in real-time.</p>
+          <Link
+            href="/login"
+            style={{
+              background: "var(--primary-color)",
+              color: "white",
+              padding: "12px 24px",
+              borderRadius: "var(--border-radius)",
+              textDecoration: "none",
+              fontWeight: 600,
+            }}
+          >
+            Sign In with Google
+          </Link>
         </div>
         <Footer />
       </main>
@@ -70,7 +84,7 @@ export default function OrdersPage() {
           >
             <Package size={64} color="var(--border-color)" style={{ margin: "0 auto 1rem" }} />
             <h2>No orders yet</h2>
-            <p style={{ color: "var(--text-light)", marginBottom: "2rem" }}>You haven't placed any orders with us.</p>
+            <p style={{ color: "var(--text-light)", marginBottom: "2rem" }}>You haven&apos;t placed any orders with us.</p>
             <Link href="/#products" style={{
               background: "var(--primary-color)",
               color: "white",

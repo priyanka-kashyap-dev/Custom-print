@@ -10,7 +10,7 @@ import { useAppContext } from "@/context/AppContext";
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, loginWithGoogle, logout, cart, theme, toggleTheme } = useAppContext();
+  const { user, logout, cart, theme, toggleTheme } = useAppContext();
 
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
@@ -68,7 +68,10 @@ export default function Navbar() {
             </Link>
 
             {user ? (
-              <div className={styles.userMenu}>
+              <div className={styles.userMenu} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-light)' }}>
+                  Hi, {user.name.split(' ')[0]}
+                </span>
                 <Link href="/orders" className={styles.navLink}>Orders</Link>
                 <button onClick={logout} className={styles.logoutBtn}>Logout</button>
               </div>

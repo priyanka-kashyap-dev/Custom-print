@@ -36,7 +36,7 @@ export default function CartPage() {
           >
             <ShoppingBag size={64} color="var(--border-color)" style={{ margin: "0 auto 1rem" }} />
             <h2>Your cart is empty</h2>
-            <p style={{ color: "var(--text-light)", marginBottom: "2rem" }}>Looks like you haven't added any custom products yet.</p>
+            <p style={{ color: "var(--text-light)", marginBottom: "2rem" }}>Looks like you haven&apos;t added any custom products yet.</p>
             <Link href="/#products" style={{
               background: "var(--primary-color)",
               color: "white",

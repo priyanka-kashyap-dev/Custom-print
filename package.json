@@ -6,13 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node tests/auth-and-db.test.mjs",
+    "check:db": "node scripts/check-db-connection.mjs"
   },
   "dependencies": {
     "emoji-picker-react": "^4.22.3",
     "firebase": "^13.0.0",
     "framer-motion": "^13.4.0",
+    "google-auth-library": "^11.3.1",
+    "jose": "^6.2.13",
     "lucide-react": "^1.47.0",
+    "mongoose": "^9.11.2",
     "next": "16.3.5",
     "nodemailer": "^10.0.16",
     "react": "19.2.8",

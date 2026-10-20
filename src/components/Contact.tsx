@@ -24,7 +24,7 @@ export default function Contact() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const onEmojiClick = (emojiObject: any) => {
+  const onEmojiClick = (emojiObject: { emoji: string }) => {
     setFormData((prev) => ({
       ...prev,
       message: prev.message + emojiObject.emoji,
@@ -33,17 +33,33 @@ export default function Contact() {
   };
 
   const startListening = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    const win = window as unknown as {
+      SpeechRecognition?: new () => {
+        onstart: () => void;
+        onend: () => void;
+        onresult: (event: { results: Array<Array<{ transcript: string }>> }) => void;
+        start: () => void;
+      };
+      webkitSpeechRecognition?: new () => {
+        onstart: () => void;
+        onend: () => void;
+        onresult: (event: { results: Array<Array<{ transcript: string }>> }) => void;
+        start: () => void;
+      };
+    };
+
+    if (!win.webkitSpeechRecognition && !win.SpeechRecognition) {
       alert("Your browser doesn't support voice input.");
       return;
     }
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
+    const SpeechRecognitionClass = win.SpeechRecognition || win.webkitSpeechRecognition;
+    if (!SpeechRecognitionClass) return;
+    const recognition = new SpeechRecognitionClass();
     
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
     
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
       setFormData((prev) => ({
         ...prev,

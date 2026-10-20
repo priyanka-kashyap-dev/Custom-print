@@ -5,65 +5,183 @@ import { motion } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, LogIn } from "lucide-react";
+import { Mail, Lock, LogIn, UserPlus, ShieldCheck } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 export default function LoginPage() {
-  const { loginWithGoogle } = useAppContext();
+  const { user } = useAppContext();
   const router = useRouter();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  // If already authenticated, redirect
+  if (user) {
+    router.push("/");
+  }
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Real Firebase Email/Password Auth would go here:
-    // await signInWithEmailAndPassword(auth, email, password);
-    setTimeout(() => {
-      // Mock success for now, in a real app you'd call AppContext.loginWithEmail(email, password)
-      alert("Email login simulation successful. Please use Google Login for the full demo experience!");
-      setIsLoading(false);
-    }, 1500);
-  };
+    setStatusMessage(null);
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    await loginWithGoogle();
-    setIsLoading(false);
-    router.push("/"); // redirect to home after login
+    // Simulated email handler with informational note recommending Google Auth
+    setTimeout(() => {
+      setStatusMessage(
+        isSignUp
+          ? "For instant, passwordless security, please use the 'Continue with Google' button below!"
+          : "Please use 'Continue with Google' for real-time authentication with database syncing."
+      );
+      setIsLoading(false);
+    }, 800);
   };
 
   return (
-    <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", paddingTop: "80px", background: "var(--background-color)" }}>
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        paddingTop: "80px",
+        background: "var(--background-color)",
+      }}
+    >
       <Navbar />
-      
-      <div className="container" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
-        <motion.div 
+
+      <div
+        className="container"
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "40px 24px",
+        }}
+      >
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass"
           style={{
-            maxWidth: "450px",
+            maxWidth: "460px",
             width: "100%",
-            padding: "3rem 2rem",
+            padding: "2.5rem 2rem",
             borderRadius: "var(--border-radius-lg)",
-            boxShadow: "var(--shadow-lg)"
+            boxShadow: "var(--shadow-lg)",
           }}
         >
-          <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem", fontFamily: "var(--font-heading)" }}>Welcome Back</h1>
-            <p style={{ color: "var(--text-light)" }}>Sign in to manage your orders and custom designs</p>
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: "1.75rem" }}>
+            <h1
+              style={{
+                fontSize: "2rem",
+                marginBottom: "0.5rem",
+                fontFamily: "var(--font-heading)",
+              }}
+            >
+              {isSignUp ? "Create an Account" : "Welcome Back"}
+            </h1>
+            <p style={{ color: "var(--text-light)", fontSize: "0.95rem" }}>
+              {isSignUp
+                ? "Sign up with Google to customize and track your orders"
+                : "Sign in to manage your orders and custom designs"}
+            </p>
           </div>
 
-          <form onSubmit={handleEmailLogin} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+          {/* Quick Google Sign In */}
+          <div style={{ marginBottom: "1.5rem" }}>
+            <GoogleSignInButton
+              redirectAfterLogin="/"
+              buttonText={isSignUp ? "signup_with" : "continue_with"}
+            />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                marginTop: "0.75rem",
+                fontSize: "0.8rem",
+                color: "var(--text-light)",
+              }}
+            >
+              <ShieldCheck size={14} color="var(--success-color)" />
+              <span>Free, secure Google account authentication</span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              margin: "1.5rem 0",
+              color: "var(--text-light)",
+            }}
+          >
+            <div style={{ flex: 1, height: "1px", background: "var(--border-color)" }} />
+            <span style={{ padding: "0 1rem", fontSize: "0.85rem", textTransform: "uppercase" }}>
+              OR with email
+            </span>
+            <div style={{ flex: 1, height: "1px", background: "var(--border-color)" }} />
+          </div>
+
+          {statusMessage && (
+            <div
+              style={{
+                background: "rgba(79, 70, 229, 0.08)",
+                border: "1px solid var(--primary-color)",
+                color: "var(--primary-color)",
+                padding: "10px 14px",
+                borderRadius: "8px",
+                fontSize: "0.85rem",
+                marginBottom: "1.25rem",
+                lineHeight: 1.4,
+              }}
+            >
+              {statusMessage}
+            </div>
+          )}
+
+          <form onSubmit={handleEmailSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+            {isSignUp && (
+              <div>
+                <label style={{ display: "block", marginBottom: "0.4rem", fontWeight: 500, fontSize: "0.9rem" }}>
+                  Full Name
+                </label>
+                <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Jane Doe"
+                    required={isSignUp}
+                    style={{
+                      width: "100%",
+                      padding: "12px 14px",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border-color)",
+                      outline: "none",
+                      fontFamily: "inherit",
+                      transition: "var(--transition)",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
-              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500, fontSize: "0.9rem" }}>Email Address</label>
+              <label style={{ display: "block", marginBottom: "0.4rem", fontWeight: 500, fontSize: "0.9rem" }}>
+                Email Address
+              </label>
               <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
                 <Mail size={18} style={{ position: "absolute", left: "12px", color: "var(--text-light)" }} />
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
@@ -75,21 +193,25 @@ export default function LoginPage() {
                     border: "1px solid var(--border-color)",
                     outline: "none",
                     fontFamily: "inherit",
-                    transition: "var(--transition)"
+                    transition: "var(--transition)",
                   }}
                 />
               </div>
             </div>
 
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
                 <label style={{ fontWeight: 500, fontSize: "0.9rem" }}>Password</label>
-                <Link href="#" style={{ fontSize: "0.8rem", color: "var(--primary-color)" }}>Forgot Password?</Link>
+                {!isSignUp && (
+                  <Link href="#" style={{ fontSize: "0.8rem", color: "var(--primary-color)" }}>
+                    Forgot Password?
+                  </Link>
+                )}
               </div>
               <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
                 <Lock size={18} style={{ position: "absolute", left: "12px", color: "var(--text-light)" }} />
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -101,13 +223,13 @@ export default function LoginPage() {
                     border: "1px solid var(--border-color)",
                     outline: "none",
                     fontFamily: "inherit",
-                    transition: "var(--transition)"
+                    transition: "var(--transition)",
                   }}
                 />
               </div>
             </div>
 
-            <button 
+            <button
               type="submit"
               disabled={isLoading}
               style={{
@@ -121,55 +243,74 @@ export default function LoginPage() {
                 justifyContent: "center",
                 gap: "0.5rem",
                 marginTop: "0.5rem",
-                opacity: isLoading ? 0.7 : 1
+                opacity: isLoading ? 0.7 : 1,
+                cursor: "pointer",
+                border: "none",
               }}
             >
-              {isLoading ? "Signing in..." : <><LogIn size={18} /> Sign In</>}
+              {isLoading ? (
+                "Processing..."
+              ) : isSignUp ? (
+                <>
+                  <UserPlus size={18} /> Create Account
+                </>
+              ) : (
+                <>
+                  <LogIn size={18} /> Sign In
+                </>
+              )}
             </button>
           </form>
 
-          <div style={{ display: "flex", alignItems: "center", margin: "2rem 0", color: "var(--text-light)" }}>
-            <div style={{ flex: 1, height: "1px", background: "var(--border-color)" }} />
-            <span style={{ padding: "0 1rem", fontSize: "0.9rem" }}>OR</span>
-            <div style={{ flex: 1, height: "1px", background: "var(--border-color)" }} />
+          {/* Toggle between Login and Registration */}
+          <div style={{ textAlign: "center", marginTop: "1.75rem", fontSize: "0.9rem", color: "var(--text-light)" }}>
+            {isSignUp ? (
+              <>
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignUp(false);
+                    setStatusMessage(null);
+                  }}
+                  style={{
+                    color: "var(--primary-color)",
+                    fontWeight: 600,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                >
+                  Sign In
+                </button>
+              </>
+            ) : (
+              <>
+                Don&apos;t have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignUp(true);
+                    setStatusMessage(null);
+                  }}
+                  style={{
+                    color: "var(--primary-color)",
+                    fontWeight: 600,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                >
+                  Sign Up
+                </button>
+              </>
+            )}
           </div>
-
-          <button 
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
-            style={{
-              background: "white",
-              color: "var(--text-color)",
-              border: "1px solid var(--border-color)",
-              padding: "12px",
-              borderRadius: "8px",
-              fontWeight: 600,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
-              width: "100%",
-              boxShadow: "var(--shadow-sm)",
-              transition: "var(--transition)"
-            }}
-            onMouseOver={(e) => e.currentTarget.style.background = "#f9f9f9"}
-            onMouseOut={(e) => e.currentTarget.style.background = "white"}
-          >
-            <svg width="18" height="18" viewBox="0 0 48 48">
-              <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-              <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-              <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-              <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-            </svg>
-            Sign in with Google
-          </button>
-
-          <p style={{ textAlign: "center", marginTop: "2rem", fontSize: "0.9rem", color: "var(--text-light)" }}>
-            Don't have an account? <Link href="#" style={{ color: "var(--primary-color)", fontWeight: 600 }}>Sign up</Link>
-          </p>
         </motion.div>
       </div>
-      
+
       <Footer />
     </main>
   );
