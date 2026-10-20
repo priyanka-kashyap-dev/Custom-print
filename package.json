@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node tests/auth-and-db.test.mjs",
-    "check:db": "node scripts/check-db-connection.mjs"
+    "check:db": "node scripts/check-db-connection.mjs",
+    "check:users": "node scripts/check-users.mjs"
   },
   "dependencies": {
     "emoji-picker-react": "^4.22.3",

@@ -13,11 +13,30 @@ export async function GET() {
     await adminDb?.ping();
     const pingMs = Date.now() - pingStart;
 
+    let userCount = 0;
+    let orderCount = 0;
+    let productCount = 0;
+
+    try {
+      if (conn.connection.db) {
+        userCount = await conn.connection.db.collection('users').countDocuments();
+        orderCount = await conn.connection.db.collection('orders').countDocuments();
+        productCount = await conn.connection.db.collection('products').countDocuments();
+      }
+    } catch {
+      // ignore counting failure
+    }
+
     return NextResponse.json({
       status: 'connected',
       database: conn.connection.name,
       host: conn.connection.host,
       readyState: conn.connection.readyState,
+      counts: {
+        users: userCount,
+        orders: orderCount,
+        products: productCount,
+      },
       pingMs,
       totalDurationMs: Date.now() - startTime,
       message: 'MongoDB Atlas connection established and operational.',
