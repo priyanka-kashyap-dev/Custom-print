@@ -4,3 +4,12 @@ package-lock.json
 .env*
 !.env.example
 .DS_Store
+
+# Python stub and cache files
+*.pyi
+*.pyc
+__pycache__/
+
+# IDE & Editor settings
+.vscode/
+.idea/
