@@ -1,15 +1,48 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
 import Link from "next/link";
-import { Package, Clock, Printer, Truck, CheckCircle, CreditCard, QrCode, Banknote, FileCheck2, AlertCircle } from "lucide-react";
+import {
+  Package,
+  Clock,
+  Printer,
+  Truck,
+  CheckCircle,
+  CreditCard,
+  QrCode,
+  Banknote,
+  FileCheck2,
+  AlertCircle,
+  XCircle,
+  Ban,
+} from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { OrderStatus, PaymentStatus } from "@/context/AppContext";
 
+const TIMELINE_STEPS: OrderStatus[] = [
+  "Order Placed",
+  "Processing",
+  "Printed",
+  "Shipped",
+  "Delivered",
+];
+
+const statusIcons: Record<string, React.ReactNode> = {
+  "Order Placed": <Package size={20} />,
+  "Processing": <Clock size={20} />,
+  "Printed": <Printer size={20} />,
+  "Shipped": <Truck size={20} />,
+  "Delivered": <CheckCircle size={20} />,
+  "Cancelled": <XCircle size={20} />,
+  "Payment Verification Failed": <AlertCircle size={20} />,
+};
+
 export default function OrdersPage() {
-  const { user, orders } = useAppContext();
+  const { user, orders, updateOrderStatus } = useAppContext();
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   if (!user) {
     return (
@@ -38,16 +71,7 @@ export default function OrdersPage() {
   }
 
   const getStatusIndex = (status: OrderStatus) => {
-    const statuses: OrderStatus[] = ["Payment Verification Failed", "Order Placed", "Processing", "Printed", "Shipped", "Delivered"];
-    return Math.max(0, statuses.indexOf(status) - 1); // Offset by 1 to ignore the Failed state for the happy path timeline
-  };
-
-  const statusIcons = {
-    "Order Placed": <Package size={20} />,
-    "Processing": <Clock size={20} />,
-    "Printed": <Printer size={20} />,
-    "Shipped": <Truck size={20} />,
-    "Delivered": <CheckCircle size={20} />
+    return TIMELINE_STEPS.indexOf(status);
   };
 
   const getPaymentStatusColor = (status: PaymentStatus) => {
@@ -162,8 +186,33 @@ export default function OrdersPage() {
                   )}
                 </div>
 
+                {/* Status Banners */}
+                {order.status === "Cancelled" && (
+                  <div style={{ marginBottom: "2rem", padding: "1rem 1.25rem", borderRadius: "8px", background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", display: "flex", alignItems: "center", gap: "0.75rem", color: "#dc2626" }}>
+                    <Ban size={22} />
+                    <div>
+                      <p style={{ fontWeight: 600, margin: 0 }}>This order has been cancelled</p>
+                      <p style={{ fontSize: "0.85rem", margin: "2px 0 0 0", opacity: 0.9 }}>
+                        {order.paymentStatus === "Paid" ? "If you were charged, a refund is being processed to your original payment method." : "No payment was collected for this order."}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {order.status === "Payment Verification Failed" && (
+                  <div style={{ marginBottom: "2rem", padding: "1rem 1.25rem", borderRadius: "8px", background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", display: "flex", alignItems: "center", gap: "0.75rem", color: "#dc2626" }}>
+                    <AlertCircle size={22} />
+                    <div>
+                      <p style={{ fontWeight: 600, margin: 0 }}>Payment verification could not be completed</p>
+                      <p style={{ fontSize: "0.85rem", margin: "2px 0 0 0", opacity: 0.9 }}>
+                        Please reach out to support with your transaction reference or place a new order.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Progress Timeline */}
-                {order.status !== "Payment Verification Failed" && (
+                {order.status !== "Payment Verification Failed" && order.status !== "Cancelled" && (
                   <div style={{ marginBottom: "2rem" }}>
                     <p style={{ fontWeight: 600, marginBottom: "1rem" }}>Order Status: <span style={{ color: "var(--primary-color)" }}>{order.status}</span></p>
                     
@@ -176,7 +225,7 @@ export default function OrdersPage() {
                         position: "absolute", 
                         top: "20px", 
                         left: "0", 
-                        width: `${(getStatusIndex(order.status) / 4) * 100}%`, 
+                        width: `${Math.max(0, (getStatusIndex(order.status) / (TIMELINE_STEPS.length - 1)) * 100)}%`, 
                         height: "4px", 
                         background: "var(--primary-color)", 
                         zIndex: 2, 
@@ -185,7 +234,7 @@ export default function OrdersPage() {
                       }} />
 
                       {/* Status Nodes */}
-                      {(["Order Placed", "Processing", "Printed", "Shipped", "Delivered"] as (Exclude<OrderStatus, "Payment Verification Failed">)[]).map((status, i) => {
+                      {TIMELINE_STEPS.map((status, i) => {
                         const isCompleted = getStatusIndex(order.status) >= i;
                         const isActive = getStatusIndex(order.status) === i;
                         
@@ -231,6 +280,42 @@ export default function OrdersPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Cancel Order Action */}
+                {(order.status === "Order Placed" || order.status === "Processing") && (
+                  <div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px dashed var(--border-color)", display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm("Are you sure you want to cancel Order #" + order.id + "?")) {
+                          setCancellingId(order.id);
+                          const res = await updateOrderStatus(order.id, "Cancelled");
+                          setCancellingId(null);
+                          if (!res.success) {
+                            alert(res.error || "Failed to cancel order");
+                          }
+                        }
+                      }}
+                      disabled={cancellingId === order.id}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        padding: "8px 16px",
+                        background: "rgba(239, 68, 68, 0.08)",
+                        color: "#dc2626",
+                        border: "1px solid rgba(239, 68, 68, 0.3)",
+                        borderRadius: "6px",
+                        cursor: cancellingId === order.id ? "not-allowed" : "pointer",
+                        fontSize: "0.85rem",
+                        fontWeight: 600,
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      <Ban size={15} />
+                      {cancellingId === order.id ? "Cancelling..." : "Cancel Order"}
+                    </button>
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>

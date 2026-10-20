@@ -42,7 +42,7 @@ export async function GET() {
   const { authorized } = await checkAdminAuth();
   if (!authorized) {
     return NextResponse.json(
-      { error: 'Unauthorized: Admin privileges required. Current admin: pkashyap1506@gmail.com' },
+      { error: 'Unauthorized: Admin privileges required.' },
       { status: 403 }
     );
   }
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
   const { authorized } = await checkAdminAuth();
   if (!authorized) {
     return NextResponse.json(
-      { error: 'Unauthorized: Admin privileges required. Current admin: pkashyap1506@gmail.com' },
+      { error: 'Unauthorized: Admin privileges required.' },
       { status: 403 }
     );
   }
@@ -178,7 +178,7 @@ export async function PUT(req: Request) {
   const { authorized } = await checkAdminAuth();
   if (!authorized) {
     return NextResponse.json(
-      { error: 'Unauthorized: Admin privileges required. Current admin: pkashyap1506@gmail.com' },
+      { error: 'Unauthorized: Admin privileges required.' },
       { status: 403 }
     );
   }
@@ -227,7 +227,7 @@ export async function DELETE(req: Request) {
   const { authorized } = await checkAdminAuth();
   if (!authorized) {
     return NextResponse.json(
-      { error: 'Unauthorized: Admin privileges required. Current admin: pkashyap1506@gmail.com' },
+      { error: 'Unauthorized: Admin privileges required.' },
       { status: 403 }
     );
   }

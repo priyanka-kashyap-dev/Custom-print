@@ -33,8 +33,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 import styles from "./AdminDashboard.module.css";
-
-const ADMIN_EMAIL = "pkashyap1506@gmail.com";
+import { isAdminEmail } from "@/lib/auth-constants";
 
 interface ExtendedProduct extends Product {
   originalPrice?: number;
@@ -90,7 +89,7 @@ export default function AdminPage() {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isAuthorized = user && (user.email.toLowerCase().trim() === ADMIN_EMAIL || isAdmin || user.role === "admin");
+  const isAuthorized = user && (isAdminEmail(user.email) || isAdmin || user.role === "admin");
 
   const fetchAdminProducts = useCallback(async () => {
     setLoading(true);
@@ -406,8 +405,7 @@ export default function AdminPage() {
             </div>
             <h1 style={{ fontSize: "1.8rem", marginBottom: "8px" }}>Admin Access Required</h1>
             <p style={{ color: "var(--text-light)", marginBottom: "20px", fontSize: "0.95rem", lineHeight: 1.6 }}>
-              This management console is restricted to the administrator account:{" "}
-              <strong style={{ color: "var(--primary-color)" }}>{ADMIN_EMAIL}</strong>.
+              This management console is restricted to authorized administrator accounts.
             </p>
 
             {user ? (
@@ -490,7 +488,7 @@ export default function AdminPage() {
             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
               <h1>Admin Command Center</h1>
               <span className={styles.adminBadge}>
-                <span className={styles.adminBadgeDot} /> {ADMIN_EMAIL}
+                <span className={styles.adminBadgeDot} /> {user?.email || "Admin"}
               </span>
             </div>
             <p>Manage product stock, update live prices, and upload custom print assets.</p>

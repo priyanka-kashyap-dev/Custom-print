@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, ShoppingBag, Sparkles, ShoppingCart, User as UserIcon, ShieldAlert } from "lucide-react";
 import { useAppContext } from "@/context/AppContext";
+import { isAdminEmail } from "@/lib/auth-constants";
 import styles from "./MobileBottomNav.module.css";
 
 export default function MobileBottomNav() {
@@ -12,7 +13,7 @@ export default function MobileBottomNav() {
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const isUserAdmin = Boolean(
-    isAdmin || (user && user.email.toLowerCase().trim() === "pkashyap1506@gmail.com")
+    isAdmin || (user && isAdminEmail(user.email))
   );
 
   return (

@@ -7,6 +7,7 @@ import { Menu, X, ShoppingCart, User as UserIcon, Moon, Sun, ShieldAlert } from 
 import styles from "./Navbar.module.css";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
+import { isAdminEmail } from "@/lib/auth-constants";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -15,7 +16,7 @@ export default function Navbar() {
 
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
   const isUserAdmin = Boolean(
-    isAdmin || (user && user.email.toLowerCase().trim() === "pkashyap1506@gmail.com")
+    isAdmin || (user && isAdminEmail(user.email))
   );
 
   useEffect(() => {

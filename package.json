@@ -12,6 +12,7 @@
     "check:users": "node scripts/check-users.mjs"
   },
   "dependencies": {
+    "cloudinary": "^2.11.0",
     "emoji-picker-react": "^4.22.3",
     "firebase": "^13.0.0",
     "framer-motion": "^13.4.0",

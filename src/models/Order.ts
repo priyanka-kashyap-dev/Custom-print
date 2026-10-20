@@ -23,7 +23,8 @@ export type OrderStatus =
   | 'Printed'
   | 'Shipped'
   | 'Delivered'
-  | 'Payment Verification Failed';
+  | 'Payment Verification Failed'
+  | 'Cancelled';
 
 export type PaymentMethod = 'UPI' | 'Card' | 'COD';
 
@@ -132,6 +133,7 @@ const OrderSchema = new Schema<IOrder>(
         'Shipped',
         'Delivered',
         'Payment Verification Failed',
+        'Cancelled',
       ],
       default: 'Order Placed',
       index: true,

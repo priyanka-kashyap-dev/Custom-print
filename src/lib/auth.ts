@@ -25,12 +25,10 @@ const secretKey = new TextEncoder().encode(rawSecret);
 // Google OAuth client for backend ID token verification
 const googleOAuthClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-export const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'pkashyap1506@gmail.com').toLowerCase().trim();
+import { ADMIN_EMAILS, isAdminEmail } from './auth-constants';
 
-export function isAdminEmail(email?: string): boolean {
-  if (!email) return false;
-  return email.toLowerCase().trim() === ADMIN_EMAIL;
-}
+export { ADMIN_EMAILS, isAdminEmail };
+export const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'pkashyap1506@gmail.com').toLowerCase().trim();
 
 /**
  * Encrypt a user session payload into a signed JWT.

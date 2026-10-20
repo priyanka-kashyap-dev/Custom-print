@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { isAdminEmail } from "@/lib/auth-constants";
 
 export type Product = {
   id: number | string;
@@ -126,7 +127,8 @@ export type OrderStatus =
   | "Processing"
   | "Printed"
   | "Shipped"
-  | "Delivered";
+  | "Delivered"
+  | "Cancelled";
 
 export type PaymentMethod = "UPI" | "Card" | "COD";
 
@@ -140,6 +142,15 @@ export type PaymentStatus =
   | "Refund Requested"
   | "Refunded";
 
+export type ShippingAddress = {
+  fullName?: string;
+  phone?: string;
+  addressLine1?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+};
+
 export type Order = {
   id: string;
   date: string;
@@ -151,6 +162,9 @@ export type Order = {
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   transactionId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  shippingAddress?: ShippingAddress;
 };
 
 export type User = {
@@ -173,6 +187,9 @@ interface BackendOrder {
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   transactionId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  shippingAddress?: ShippingAddress;
 }
 
 interface AppContextType {
@@ -190,6 +207,11 @@ interface AppContextType {
   cartTotal: number;
   orders: Order[];
   refreshOrders: () => Promise<void>;
+  updateOrderStatus: (
+    orderId: string,
+    status: OrderStatus,
+    paymentStatus?: PaymentStatus
+  ) => Promise<{ success: boolean; error?: string }>;
   placeOrder: (paymentMethod: PaymentMethod, transactionId?: string) => Promise<void>;
   adminSettings: {
     codCharge: number;
@@ -249,7 +271,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const isAdmin = Boolean(
-    user && (user.role === "admin" || user.email?.toLowerCase().trim() === "pkashyap1506@gmail.com")
+    user && (user.role === "admin" || isAdminEmail(user.email))
   );
 
   const refreshProducts = useCallback(async () => {
@@ -291,6 +313,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             paymentMethod: o.paymentMethod,
             paymentStatus: o.paymentStatus,
             transactionId: o.transactionId,
+            customerName: o.customerName,
+            customerEmail: o.customerEmail,
+            shippingAddress: o.shippingAddress,
           }));
           setOrders(mappedOrders);
         }
@@ -299,6 +324,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.warn("Could not load orders from backend:", err);
     }
   }, []);
+
+  const updateOrderStatus = useCallback(
+    async (orderId: string, status: OrderStatus, paymentStatus?: PaymentStatus) => {
+      try {
+        const res = await fetch("/api/orders", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId, status, paymentStatus }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          return { success: false, error: data.error || "Failed to update order status" };
+        }
+        await refreshOrders();
+        return { success: true };
+      } catch (err: unknown) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : "Network error occurred",
+        };
+      }
+    },
+    [refreshOrders]
+  );
 
   // Sync session on mount from server HttpOnly cookie
   useEffect(() => {
@@ -477,6 +526,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         cartTotal,
         orders,
         refreshOrders,
+        updateOrderStatus,
         placeOrder,
         adminSettings,
         theme,

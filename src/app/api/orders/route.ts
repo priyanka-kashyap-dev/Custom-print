@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
-import Order, { IOrderItem, PaymentMethod, PaymentStatus } from '@/models/Order';
+import Order, { IOrderItem, OrderStatus, PaymentMethod, PaymentStatus } from '@/models/Order';
 import mongoose from 'mongoose';
 
 interface OrderRequestBody {
@@ -162,3 +162,104 @@ export async function POST(req: Request) {
     );
   }
 }
+
+/**
+ * PATCH /api/orders
+ * Updates order status or payment status.
+ * - Admin can update status and paymentStatus of any order.
+ * - Customers can cancel their own order if still 'Order Placed'.
+ */
+export async function PATCH(req: Request) {
+  try {
+    const session = await getSessionUser();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Please sign in.' },
+        { status: 401 }
+      );
+    }
+
+    const body = (await req.json().catch(() => ({}))) as {
+      orderId?: string;
+      status?: OrderStatus;
+      paymentStatus?: PaymentStatus;
+    };
+
+    const { orderId, status, paymentStatus } = body;
+
+    if (!orderId) {
+      return NextResponse.json(
+        { error: 'orderId is required' },
+        { status: 400 }
+      );
+    }
+
+    await connectToDatabase();
+
+    const order = await Order.findOne({
+      $or: [
+        { orderId },
+        ...(mongoose.Types.ObjectId.isValid(orderId) ? [{ _id: new mongoose.Types.ObjectId(orderId) }] : []),
+      ],
+    });
+
+    if (!order) {
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      );
+    }
+
+    if (session.role === 'admin') {
+      if (status) {
+        order.status = status;
+      }
+      if (paymentStatus) {
+        order.paymentStatus = paymentStatus;
+      }
+    } else {
+      // Regular user - can only cancel their own order
+      const isOwner =
+        (order.user && order.user.toString() === session.id) ||
+        order.customerEmail.toLowerCase() === session.email.toLowerCase();
+
+      if (!isOwner) {
+        return NextResponse.json(
+          { error: 'Forbidden. You do not own this order.' },
+          { status: 403 }
+        );
+      }
+
+      if (status === 'Cancelled') {
+        if (order.status !== 'Order Placed') {
+          return NextResponse.json(
+            { error: 'Orders that are already processing or shipped cannot be cancelled directly. Please contact support.' },
+            { status: 400 }
+          );
+        }
+        order.status = 'Cancelled';
+      } else {
+        return NextResponse.json(
+          { error: 'Customers can only cancel unfulfilled orders.' },
+          { status: 403 }
+        );
+      }
+    }
+
+    await order.save();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Order updated successfully',
+      order,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to update order';
+    console.error('Error updating order:', error);
+    return NextResponse.json(
+      { error: message },
+      { status: 500 }
+    );
+  }
+}
+
