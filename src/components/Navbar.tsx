@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, ShoppingCart, User as UserIcon, Moon, Sun } from "lucide-react";
+import { Menu, X, ShoppingCart, User as UserIcon, Moon, Sun, ShieldAlert } from "lucide-react";
 import styles from "./Navbar.module.css";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
@@ -11,9 +11,12 @@ import { useAppContext } from "@/context/AppContext";
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, logout, cart, theme, toggleTheme } = useAppContext();
+  const { user, logout, cart, theme, toggleTheme, isAdmin } = useAppContext();
 
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
+  const isUserAdmin = Boolean(
+    isAdmin || (user && user.email.toLowerCase().trim() === "pkashyap1506@gmail.com")
+  );
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,11 +38,8 @@ export default function Navbar() {
     <header className={`${styles.header} ${isScrolled ? styles.scrolled : ""}`}>
       {/* Announcement Bar */}
       <div className={styles.announcementBar}>
-        <div className={styles.announcementContact}>
-          <span>📞 +91 9026332538</span>
-        </div>
         <div className={styles.announcementPromo}>
-          Use code <strong>FESTIVE15</strong> for 15% off bulk orders!
+          ✨ Code <strong>FESTIVE15</strong> for 15% off | 📞 +91 9026332538 | ⚡ Express Delivery
         </div>
       </div>
 
@@ -72,6 +72,12 @@ export default function Navbar() {
               <ShoppingCart size={20} />
               {cartItemCount > 0 && <span className={styles.cartBadge}>{cartItemCount}</span>}
             </Link>
+
+            {isUserAdmin && (
+              <Link href="/admin" className={styles.adminNavBtn} title="Admin stock & price management">
+                <ShieldAlert size={15} /> Admin
+              </Link>
+            )}
 
             {user ? (
               <div className={styles.userMenu}>
@@ -260,6 +266,25 @@ export default function Navbar() {
 
               {user ? (
                 <>
+                  {isUserAdmin && (
+                    <li>
+                      <Link
+                        href="/admin"
+                        className={styles.mobileNavLink}
+                        style={{
+                          background: "rgba(16, 185, 129, 0.12)",
+                          color: "#10b981",
+                          fontWeight: 700,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <ShieldAlert size={18} /> Admin Dashboard (Stock & Prices)
+                      </Link>
+                    </li>
+                  )}
                   <li>
                     <Link
                       href="/account"

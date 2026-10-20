@@ -66,6 +66,13 @@ body {
   overflow-x: hidden;
 }
 
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   min-height: 100%;
   display: flex;
@@ -76,6 +83,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.4s ease, color 0.4s ease;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -85,10 +93,16 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.02em;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+h1 {
+  font-size: clamp(2rem, 5.5vw, 3.8rem);
+}
+
+h2 {
+  font-size: clamp(1.65rem, 4.2vw, 2.6rem);
+}
+
+h3 {
+  font-size: clamp(1.2rem, 3.2vw, 1.8rem);
 }
 
 a {
@@ -102,11 +116,19 @@ button {
   cursor: pointer;
   border: none;
   outline: none;
+  touch-action: manipulation;
 }
 
+button:active {
+  transform: scale(0.97);
+}
+
+/* Prevent auto-zoom on iOS Safari (iPhone) by enforcing 16px font-size */
 input, textarea, select {
   background: var(--surface-color);
   color: var(--text-color);
+  font-size: 16px;
+  font-family: inherit;
 }
 
 .container {
@@ -114,6 +136,12 @@ input, textarea, select {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 16px;
+  }
 }
 
 /* Glassmorphism utility */

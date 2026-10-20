@@ -4,10 +4,15 @@ export interface IProduct extends Document {
   title: string;
   description: string;
   price: number;
+  originalPrice?: number;
+  image?: string;
   imageColor?: string;
   images?: string[];
   category: string;
   stock: number;
+  badge?: string;
+  rating?: number;
+  reviews?: number;
   status: 'active' | 'out_of_stock' | 'draft';
   createdAt: Date;
   updatedAt: Date;
@@ -30,6 +35,14 @@ const ProductSchema = new Schema<IProduct>(
       required: [true, 'Price is required'],
       min: [0, 'Price must be a positive number'],
     },
+    originalPrice: {
+      type: Number,
+      default: 0,
+    },
+    image: {
+      type: String,
+      default: '',
+    },
     imageColor: {
       type: String,
       default: '#f3f4f6',
@@ -45,8 +58,20 @@ const ProductSchema = new Schema<IProduct>(
     },
     stock: {
       type: Number,
-      default: 100,
+      default: 50,
       min: [0, 'Stock cannot be negative'],
+    },
+    badge: {
+      type: String,
+      default: '',
+    },
+    rating: {
+      type: Number,
+      default: 4.9,
+    },
+    reviews: {
+      type: Number,
+      default: 24,
     },
     status: {
       type: String,

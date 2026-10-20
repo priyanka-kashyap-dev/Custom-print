@@ -161,11 +161,44 @@
 }
 
 @media (max-width: 768px) {
+  .section {
+    padding: 60px 0;
+  }
+  .header {
+    margin-bottom: 36px;
+  }
+  .title {
+    font-size: 2rem;
+  }
   .inputGroup {
     grid-template-columns: 1fr;
     gap: 16px;
   }
   .formContainer {
-    padding: 24px;
+    padding: 24px 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .section {
+    padding: 40px 0;
+  }
+  .title {
+    font-size: 1.75rem;
+  }
+  .formContainer {
+    padding: 20px 14px;
+    border-radius: var(--border-radius);
+  }
+  .inputField input,
+  .inputField select,
+  .inputField textarea {
+    padding: 12px 14px;
+    font-size: 16px;
+  }
+  .submitButton {
+    min-height: 48px;
+    font-size: 1rem;
+    padding: 14px;
   }
 }

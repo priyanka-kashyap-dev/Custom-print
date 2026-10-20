@@ -20,6 +20,51 @@
   max-width: 600px;
 }
 
+.trustBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.heroMicroTrust {
+  display: flex;
+  gap: 18px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  color: var(--text-light);
+}
+
+.heroMicroTrust span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.floatingChip {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 5;
+}
+
 .title {
   font-size: 4.5rem;
   line-height: 1.1;
@@ -211,6 +256,82 @@
     width: 140px;
     height: 180px;
     top: 10px;
-    right: -10px;
+    right: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .heroSection {
+    padding-top: 105px;
+    padding-bottom: 40px;
+    min-height: auto;
+  }
+  .title {
+    font-size: 2.35rem;
+    line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  .subtitle {
+    font-size: 1rem;
+    margin-bottom: 28px;
+    line-height: 1.5;
+    padding: 0 4px;
+  }
+  .actions {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+  .primaryButton, .secondaryButton {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 1rem;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .heroMicroTrust {
+    justify-content: center;
+    gap: 12px;
+    font-size: 0.8rem;
+    margin-top: 20px;
+  }
+  .visual {
+    height: 330px;
+    margin-top: 28px;
+    max-width: 100%;
+    position: relative;
+    overflow: visible;
+  }
+  .img1 {
+    width: 175px;
+    height: 235px;
+    top: 15px;
+    left: 10px;
+    border-radius: 18px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  }
+  .img2 {
+    width: 140px;
+    height: 140px;
+    bottom: 15px;
+    right: 15px;
+    border-radius: 18px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  }
+  .img3 {
+    width: 125px;
+    height: 155px;
+    top: 10px;
+    right: 20px;
+    border-radius: 18px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  }
+  .floatingChip {
+    font-size: 0.68rem;
+    padding: 3px 8px;
+    bottom: 8px;
+    left: 8px;
   }
 }

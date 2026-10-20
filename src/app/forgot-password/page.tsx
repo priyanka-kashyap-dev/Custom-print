@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "40px 24px",
+          padding: "clamp(20px, 4vw, 40px) 16px",
         }}
       >
         <motion.div
@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
           style={{
             maxWidth: "460px",
             width: "100%",
-            padding: "2.5rem 2rem",
+            padding: "clamp(1.5rem, 5vw, 2.5rem) clamp(1.1rem, 4vw, 2rem)",
             borderRadius: "var(--border-radius-lg)",
             boxShadow: "var(--shadow-lg)",
           }}

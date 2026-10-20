@@ -1,165 +1,86 @@
 import { NextResponse } from 'next/server';
-import { getSessionUser } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import Product from '@/models/Product';
+import { fallbackProductStore, INITIAL_PRODUCTS } from '@/lib/fallback-store';
 
-const INITIAL_PRODUCTS = [
-  {
-    title: 'Custom Printed Shirts',
-    description: 'Premium cotton t-shirts with your unique design or photo.',
-    price: 25,
-    imageColor: '#fdfbfb',
-    category: 'Apparel',
-    stock: 150,
-    status: 'active',
-  },
-  {
-    title: 'Personalized Pillows',
-    description: 'Cozy up with memories. Soft cushions featuring your photos.',
-    price: 30,
-    imageColor: '#f7f0f6',
-    category: 'Home & Living',
-    stock: 80,
-    status: 'active',
-  },
-  {
-    title: 'Heart-Shaped Pillows',
-    description: 'The perfect romantic gift for your loved one.',
-    price: 35,
-    imageColor: '#fae8e8',
-    category: 'Gifts',
-    stock: 60,
-    status: 'active',
-  },
-  {
-    title: 'Custom Printed Couches',
-    description: 'Unique printed couches to bring your living room to life.',
-    price: 299,
-    imageColor: '#f0f4f8',
-    category: 'Furniture',
-    stock: 15,
-    status: 'active',
-  },
-  {
-    title: 'Couple Gifts',
-    description: 'Matching sets and personalized gifts for couples.',
-    price: 40,
-    imageColor: '#fdf8ec',
-    category: 'Gifts',
-    stock: 100,
-    status: 'active',
-  },
-  {
-    title: 'Custom Designs',
-    description: "Have an idea? We'll help you bring it to life on any product.",
-    price: 50,
-    imageColor: '#f3f0f7',
-    category: 'Custom',
-    stock: 999,
-    status: 'active',
-  },
-];
-
-interface CreateProductBody {
-  title?: string;
-  description?: string;
-  price?: number;
-  imageColor?: string;
-  category?: string;
-  stock?: number;
-  status?: 'active' | 'out_of_stock' | 'draft';
+function resolveImage(title: string, currentImage?: string): string {
+  if (currentImage && currentImage.trim() !== '') {
+    return currentImage;
+  }
+  const lower = title.toLowerCase();
+  if (lower.includes('heart')) return '/images/products/heart-pillow.jpg';
+  if (lower.includes('pillow') || lower.includes('cushion')) return '/images/products/pillow.jpg';
+  if (lower.includes('couch') || lower.includes('sofa') || lower.includes('chair')) return '/images/products/couch.jpg';
+  if (lower.includes('couple')) return '/images/products/couple-gift.jpg';
+  if (lower.includes('canvas') || lower.includes('design') || lower.includes('art')) return '/images/products/canvas.jpg';
+  return '/images/products/tshirt.jpg';
 }
 
-/**
- * GET /api/products
- * Public endpoint to fetch catalog products. Automatically initializes catalog on first load.
- */
+function resolveBadge(title: string, currentBadge?: string): string {
+  if (currentBadge && currentBadge.trim() !== '') return currentBadge;
+  const lower = title.toLowerCase();
+  if (lower.includes('shirt')) return 'Bestseller';
+  if (lower.includes('heart')) return 'Most Loved';
+  if (lower.includes('pillow')) return 'Trending';
+  if (lower.includes('couch')) return 'Luxury';
+  if (lower.includes('couple')) return 'Special Set';
+  if (lower.includes('design')) return 'Popular';
+  return '';
+}
+
 export async function GET() {
   try {
-    await connectToDatabase();
+    let products: unknown[] = [];
 
-    let products = await Product.find({ status: 'active' }).sort({ createdAt: 1 }).lean();
+    // 1. Try querying MongoDB Atlas
+    try {
+      await connectToDatabase();
+      const dbProducts = await Product.find({ status: { $ne: 'draft' } }).sort({ createdAt: -1 }).lean();
+      if (dbProducts && dbProducts.length > 0) {
+        products = dbProducts.map((p) => {
+          const img = resolveImage(p.title, p.image || (p.images && p.images[0]));
+          const badge = resolveBadge(p.title, p.badge);
+          const origPrice = p.originalPrice && p.originalPrice > 0 ? p.originalPrice : Math.round(p.price * 1.35);
 
-    // Auto-seed default catalog if collection is empty
+          return {
+            id: p._id.toString(),
+            title: p.title,
+            description: p.description,
+            price: p.price,
+            originalPrice: origPrice,
+            image: img,
+            images: p.images && p.images.length > 0 ? p.images : [img],
+            imageColor: p.imageColor || '#f3f4f6',
+            category: p.category || 'General',
+            stock: p.stock !== undefined ? p.stock : 50,
+            badge: badge,
+            rating: p.rating || 4.9,
+            reviews: p.reviews || 48,
+            status: p.status || 'active',
+          };
+        });
+      }
+    } catch (dbErr) {
+      console.warn('MongoDB query deferred, using fallback store:', dbErr);
+    }
+
+    // 2. Fallback store if DB is empty or connecting
     if (products.length === 0) {
-      await Product.insertMany(INITIAL_PRODUCTS);
-      products = await Product.find({ status: 'active' }).sort({ createdAt: 1 }).lean();
+      const fbProducts = fallbackProductStore.getAll();
+      products = fbProducts.map((p) => ({
+        ...p,
+        id: String(p.id),
+      }));
     }
 
     return NextResponse.json({
       success: true,
-      products,
+      products: products.length > 0 ? products : INITIAL_PRODUCTS,
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Database error';
-    console.error('Error fetching products:', error);
-    // Fallback gracefully to memory products if database is not yet connected
-    return NextResponse.json({
-      success: false,
-      fallback: true,
-      error: message,
-      products: INITIAL_PRODUCTS.map((p, idx) => ({ ...p, id: idx + 1 })),
-    });
-  }
-}
-
-/**
- * POST /api/products
- * Admin-only endpoint to add a new product.
- */
-export async function POST(req: Request) {
-  try {
-    const session = await getSessionUser();
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Authentication required.' },
-        { status: 401 }
-      );
-    }
-
-    // Role-based access control (RBAC): Only verified admins can create products
-    if (session.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required to create products.' },
-        { status: 403 }
-      );
-    }
-
-    const body = (await req.json().catch(() => ({}))) as CreateProductBody;
-    const { title, description, price, imageColor, category, stock, status } = body;
-
-    if (!title || price === undefined) {
-      return NextResponse.json(
-        { error: 'Title and price are required fields.' },
-        { status: 400 }
-      );
-    }
-
-    await connectToDatabase();
-
-    const product = await Product.create({
-      title,
-      description: description || '',
-      price: Number(price),
-      imageColor: imageColor || '#f3f4f6',
-      category: category || 'General',
-      stock: stock !== undefined ? Number(stock) : 100,
-      status: status || 'active',
-    });
-
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      {
-        success: true,
-        message: 'Product created successfully',
-        product,
-      },
-      { status: 201 }
-    );
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to create product';
-    console.error('Error creating product:', error);
-    return NextResponse.json(
-      { error: message },
+      { success: false, error: message, products: INITIAL_PRODUCTS },
       { status: 500 }
     );
   }

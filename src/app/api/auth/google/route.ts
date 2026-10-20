@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import User from '@/models/User';
-import { verifyGoogleIdToken, createSessionCookie } from '@/lib/auth';
+import { verifyGoogleIdToken, createSessionCookie, isAdminEmail } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
@@ -31,6 +31,8 @@ export async function POST(req: Request) {
       );
     }
 
+    const isAdmin = isAdminEmail(googleUser.email);
+
     // Initialize session user from cryptographically verified Google token
     let sessionUser: {
       id: string;
@@ -42,7 +44,7 @@ export async function POST(req: Request) {
       id: googleUser.googleId,
       email: googleUser.email,
       name: googleUser.name,
-      role: 'customer',
+      role: isAdmin ? 'admin' : 'customer',
       avatar: googleUser.picture || '',
     };
 
@@ -56,8 +58,9 @@ export async function POST(req: Request) {
       });
 
       if (user) {
-        // Returning user - update last login and latest profile fields, preserve existing role!
+        // Returning user - update last login and latest profile fields, preserve existing role or promote admin!
         user.lastLoginAt = new Date();
+        if (isAdmin) user.role = 'admin';
         if (!user.googleId) user.googleId = googleUser.googleId;
         if (googleUser.name && user.name !== googleUser.name) user.name = googleUser.name;
         if (googleUser.picture && user.avatar !== googleUser.picture) user.avatar = googleUser.picture;
@@ -67,17 +70,17 @@ export async function POST(req: Request) {
           id: user._id.toString(),
           email: user.email,
           name: user.name,
-          role: user.role,
+          role: isAdmin ? 'admin' : user.role,
           avatar: user.avatar || '',
         };
       } else {
-        // New user - create profile with default 'customer' role
+        // New user - create profile with default role (admin if pkashyap1506@gmail.com)
         user = await User.create({
           googleId: googleUser.googleId,
           email: googleUser.email,
           name: googleUser.name,
           avatar: googleUser.picture || '',
-          role: 'customer',
+          role: isAdmin ? 'admin' : 'customer',
           lastLoginAt: new Date(),
         });
 

@@ -87,17 +87,17 @@ export default function AccountPage() {
     >
       <Navbar />
 
-      <div className="container" style={{ flex: 1, padding: "40px 24px", maxWidth: "900px" }}>
+      <div className="container" style={{ flex: 1, padding: "clamp(20px, 4vw, 40px) 16px", maxWidth: "900px" }}>
         {/* Profile Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass"
           style={{
-            padding: "2.5rem",
+            padding: "clamp(1.25rem, 4vw, 2.5rem)",
             borderRadius: "var(--border-radius-lg)",
             boxShadow: "var(--shadow-lg)",
-            marginBottom: "2rem",
+            marginBottom: "1.5rem",
           }}
         >
           <div
@@ -106,58 +106,63 @@ export default function AccountPage() {
               alignItems: "center",
               justifyContent: "space-between",
               flexWrap: "wrap",
-              gap: "1.5rem",
+              gap: "1.25rem",
               borderBottom: "1px solid var(--border-color)",
-              paddingBottom: "2rem",
-              marginBottom: "2rem",
+              paddingBottom: "1.5rem",
+              marginBottom: "1.5rem",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
               {/* Profile Avatar */}
               {user.photoURL ? (
                 <Image
                   src={user.photoURL}
                   alt={user.name}
-                  width={72}
-                  height={72}
+                  width={64}
+                  height={64}
                   unoptimized
                   style={{
                     borderRadius: "50%",
                     boxShadow: "var(--shadow-md)",
                     border: "3px solid var(--primary-color)",
+                    flexShrink: 0,
                   }}
                 />
               ) : (
                 <div
                   style={{
-                    width: "72px",
-                    height: "72px",
+                    width: "64px",
+                    height: "64px",
                     borderRadius: "50%",
                     background: "linear-gradient(135deg, var(--primary-color), var(--secondary-color))",
                     color: "white",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "1.8rem",
+                    fontSize: "1.6rem",
                     fontWeight: 700,
+                    flexShrink: 0,
                   }}
                 >
                   {user.name.charAt(0).toUpperCase()}
                 </div>
               )}
 
-              <div>
-                <h1 style={{ fontSize: "1.75rem", marginBottom: "0.25rem" }}>{user.name}</h1>
+              <div style={{ minWidth: 0 }}>
+                <h1 style={{ fontSize: "clamp(1.35rem, 4vw, 1.75rem)", marginBottom: "0.25rem", wordBreak: "break-word" }}>
+                  {user.name}
+                </h1>
                 <p
                   style={{
                     color: "var(--text-light)",
                     display: "flex",
                     alignItems: "center",
                     gap: "6px",
-                    fontSize: "0.95rem",
+                    fontSize: "0.9rem",
+                    wordBreak: "break-all",
                   }}
                 >
-                  <Mail size={16} />
+                  <Mail size={16} style={{ flexShrink: 0 }} />
                   {user.email}
                 </p>
               </div>

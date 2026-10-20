@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
 import ThemeEffects from "@/components/ThemeEffects";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -13,6 +14,16 @@ const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#4F46E5" },
+    { media: "(prefers-color-scheme: dark)", color: "#020617" },
+  ],
+};
 
 export const metadata: Metadata = {
   title: "Custom T-Shirt & Personalized Printing Services | PrintStyle",
@@ -39,6 +50,7 @@ export default function RootLayout({
         <AppProvider>
           <ThemeEffects />
           {children}
+          <MobileBottomNav />
         </AppProvider>
       </body>
     </html>

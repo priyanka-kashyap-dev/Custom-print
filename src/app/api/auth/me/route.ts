@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSessionUser } from '@/lib/auth';
+import { getSessionUser, isAdminEmail } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import User from '@/models/User';
 
@@ -14,6 +14,8 @@ export async function GET() {
       );
     }
 
+    const isAdmin = isAdminEmail(session.email);
+
     // Refresh user role & data from MongoDB if connection is available
     try {
       await connectToDatabase();
@@ -25,7 +27,7 @@ export async function GET() {
             id: freshUser._id.toString(),
             email: freshUser.email,
             name: freshUser.name,
-            role: freshUser.role,
+            role: isAdmin ? 'admin' : freshUser.role,
             avatar: freshUser.avatar,
           },
         });
@@ -36,7 +38,10 @@ export async function GET() {
 
     return NextResponse.json({
       authenticated: true,
-      user: session,
+      user: {
+        ...session,
+        role: isAdmin ? 'admin' : session.role,
+      },
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';

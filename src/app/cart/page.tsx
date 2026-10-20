@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext, PaymentMethod } from "@/context/AppContext";
+import Image from "next/image";
 import Link from "next/link";
 import { Trash2, ArrowRight, ShoppingBag, QrCode, CreditCard, Banknote, ShieldCheck, Upload } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -19,11 +20,11 @@ export default function CartPage() {
     <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", paddingTop: "80px" }}>
       <Navbar />
       
-      <div className="container" style={{ flex: 1, padding: "40px 24px" }}>
+      <div className="container" style={{ flex: 1, padding: "clamp(20px, 4vw, 40px) 16px" }}>
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ fontSize: "2.5rem", marginBottom: "2rem", color: "var(--primary-color)" }}
+          style={{ fontSize: "clamp(1.8rem, 4vw, 2.5rem)", marginBottom: "1.5rem", color: "var(--primary-color)" }}
         >
           Your Cart
         </motion.h1>
@@ -49,8 +50,8 @@ export default function CartPage() {
             </Link>
           </motion.div>
         ) : (
-          <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
-            <div style={{ flex: "1 1 60%" }}>
+          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 500px", minWidth: 0 }}>
               {cart.map((item, index) => (
                 <motion.div 
                   key={item.id}
@@ -61,34 +62,42 @@ export default function CartPage() {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    padding: "1.5rem",
-                    borderRadius: "var(--border-radius)",
+                    padding: "clamp(12px, 3vw, 20px)",
+                    borderRadius: "16px",
                     marginBottom: "1rem",
-                    gap: "1.5rem"
+                    gap: "12px",
+                    flexWrap: "wrap",
                   }}
                 >
                   <div style={{ 
-                    width: "80px", 
-                    height: "80px", 
-                    backgroundColor: item.imageColor,
-                    borderRadius: "8px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
+                    width: "70px", 
+                    height: "70px", 
+                    borderRadius: "12px",
+                    overflow: "hidden",
+                    position: "relative",
+                    flexShrink: 0,
+                    border: "1px solid var(--border-color)",
+                    backgroundColor: item.imageColor || "#f1f5f9",
                   }}>
-                    🎨
+                    <Image
+                      src={item.image || "/images/products/tshirt.jpg"}
+                      alt={item.title}
+                      fill
+                      style={{ objectFit: "cover" }}
+                      unoptimized
+                    />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ fontSize: "1.2rem", marginBottom: "0.5rem" }}>{item.title}</h3>
-                    <p style={{ color: "var(--text-light)", fontSize: "0.9rem" }}>Quantity: {item.quantity}</p>
+                  <div style={{ flex: "1 1 180px", minWidth: "140px" }}>
+                    <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: "0 0 4px" }}>{item.title}</h3>
+                    <p style={{ color: "var(--text-light)", fontSize: "0.85rem", margin: 0 }}>Quantity: {item.quantity}</p>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <p style={{ fontWeight: 600, fontSize: "1.2rem", marginBottom: "0.5rem" }}>${item.price * item.quantity}</p>
+                  <div style={{ textAlign: "right", marginLeft: "auto" }}>
+                    <p style={{ fontWeight: 700, fontSize: "1.1rem", margin: "0 0 4px" }}>${item.price * item.quantity}</p>
                     <button 
                       onClick={() => removeFromCart(item.id)}
-                      style={{ color: "var(--error-color)", background: "transparent", display: "flex", alignItems: "center", gap: "4px" }}
+                      style={{ color: "var(--error-color)", background: "transparent", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.85rem", border: "none", cursor: "pointer" }}
                     >
-                      <Trash2 size={16} /> Remove
+                      <Trash2 size={14} /> Remove
                     </button>
                   </div>
                 </motion.div>
@@ -211,12 +220,13 @@ export default function CartPage() {
               animate={{ opacity: 1, y: 0 }}
               className="glass"
               style={{
-                flex: "1 1 30%",
-                padding: "2rem",
-                borderRadius: "var(--border-radius)",
+                flex: "1 1 300px",
+                minWidth: "280px",
+                padding: "clamp(1.25rem, 3vw, 2rem)",
+                borderRadius: "16px",
                 height: "fit-content",
                 position: "sticky",
-                top: "100px"
+                top: "100px",
               }}
             >
               <h2 style={{ marginBottom: "1.5rem" }}>Order Summary</h2>

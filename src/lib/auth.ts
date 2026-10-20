@@ -25,11 +25,19 @@ const secretKey = new TextEncoder().encode(rawSecret);
 // Google OAuth client for backend ID token verification
 const googleOAuthClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+export const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'pkashyap1506@gmail.com').toLowerCase().trim();
+
+export function isAdminEmail(email?: string): boolean {
+  if (!email) return false;
+  return email.toLowerCase().trim() === ADMIN_EMAIL;
+}
+
 /**
  * Encrypt a user session payload into a signed JWT.
  */
 export async function encryptSession(payload: SessionUser): Promise<string> {
-  return new SignJWT({ ...payload })
+  const role = isAdminEmail(payload.email) ? 'admin' : payload.role || 'customer';
+  return new SignJWT({ ...payload, role })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
@@ -45,11 +53,13 @@ export async function decryptSession(token?: string): Promise<SessionUser | null
     const { payload } = await jwtVerify(token, secretKey, {
       algorithms: ['HS256'],
     });
+    const email = payload.email as string;
+    const role = isAdminEmail(email) ? 'admin' : ((payload.role as 'customer' | 'admin') || 'customer');
     return {
       id: payload.id as string,
-      email: payload.email as string,
+      email,
       name: payload.name as string,
-      role: (payload.role as 'customer' | 'admin') || 'customer',
+      role,
       avatar: payload.avatar as string | undefined,
     };
   } catch {

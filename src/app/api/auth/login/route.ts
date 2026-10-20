@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import User from '@/models/User';
-import { verifyPassword, createSessionCookie } from '@/lib/auth';
+import { verifyPassword, createSessionCookie, isAdminEmail } from '@/lib/auth';
 import { fallbackStore } from '@/lib/fallback-store';
 
 export async function POST(req: Request) {
@@ -20,6 +20,7 @@ export async function POST(req: Request) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+    const isAdmin = isAdminEmail(normalizedEmail);
 
     let userFound = false;
     let storedPassword = '';
@@ -42,10 +43,11 @@ export async function POST(req: Request) {
           id: user._id.toString(),
           email: user.email,
           name: user.name,
-          role: user.role,
+          role: isAdmin ? 'admin' : user.role,
           avatar: user.avatar || '',
         };
         user.lastLoginAt = new Date();
+        if (isAdmin) user.role = 'admin';
         await user.save();
       }
     } catch (dbErr) {
@@ -62,7 +64,7 @@ export async function POST(req: Request) {
           id: fbUser.id,
           email: fbUser.email,
           name: fbUser.name,
-          role: fbUser.role,
+          role: isAdmin ? 'admin' : fbUser.role,
           avatar: fbUser.avatar || '',
         };
       }

@@ -5,11 +5,120 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 export type Product = {
   id: number | string;
   title: string;
+  description?: string;
   price: number;
-  imageColor: string;
+  originalPrice?: number;
+  image?: string;
+  images?: string[];
+  imageColor?: string;
+  category?: string;
+  stock?: number;
+  badge?: string;
+  rating?: number;
+  reviews?: number;
+  status?: "active" | "out_of_stock" | "draft";
 };
 
 export type CartItem = Product & { quantity: number };
+
+export const DEFAULT_STORE_PRODUCTS: Product[] = [
+  {
+    id: 1,
+    title: "Custom Printed Graphic T-Shirt",
+    description: "100% Premium bio-washed cotton with high-definition digital print that never cracks or fades.",
+    price: 25,
+    originalPrice: 35,
+    stock: 45,
+    category: "Apparel",
+    badge: "Bestseller",
+    status: "active",
+    rating: 4.9,
+    reviews: 142,
+    image: "/images/products/tshirt.jpg",
+    images: ["/images/products/tshirt.jpg"],
+    imageColor: "#fdfbfb",
+  },
+  {
+    id: 2,
+    title: "Personalized Linen Photo Cushion",
+    description: "Soft, breathable premium linen fabric with custom portrait printing and fluffy microfiber insert.",
+    price: 30,
+    originalPrice: 40,
+    stock: 32,
+    category: "Home Decor",
+    badge: "Trending",
+    status: "active",
+    rating: 4.8,
+    reviews: 98,
+    image: "/images/products/pillow.jpg",
+    images: ["/images/products/pillow.jpg"],
+    imageColor: "#f7f0f6",
+  },
+  {
+    id: 3,
+    title: "Luxury Velvet Heart Pillow",
+    description: "Romantic plush velvet heart cushion with gold metallic embroidery & customized names.",
+    price: 35,
+    originalPrice: 48,
+    stock: 18,
+    category: "Gifts",
+    badge: "Most Loved",
+    status: "active",
+    rating: 5.0,
+    reviews: 210,
+    image: "/images/products/heart-pillow.jpg",
+    images: ["/images/products/heart-pillow.jpg"],
+    imageColor: "#fae8e8",
+  },
+  {
+    id: 4,
+    title: "Designer Custom Printed Accent Couch",
+    description: "Statement living room designer chair with personalized artist fabric and solid wood frame.",
+    price: 299,
+    originalPrice: 399,
+    stock: 8,
+    category: "Furniture",
+    badge: "Luxury",
+    status: "active",
+    rating: 4.9,
+    reviews: 47,
+    image: "/images/products/couch.jpg",
+    images: ["/images/products/couch.jpg"],
+    imageColor: "#f0f4f8",
+  },
+  {
+    id: 5,
+    title: "Couple Gift Set (Mugs & Portrait Frame)",
+    description: "Matching custom ceramic couple mugs paired with an elegant gold-framed memorial portrait.",
+    price: 40,
+    originalPrice: 55,
+    stock: 25,
+    category: "Gifts",
+    badge: "Special Set",
+    status: "active",
+    rating: 4.9,
+    reviews: 184,
+    image: "/images/products/couple-gift.jpg",
+    images: ["/images/products/couple-gift.jpg"],
+    imageColor: "#fdf8ec",
+  },
+  {
+    id: 6,
+    title: "Gallery Custom Canvas Art Print",
+    description: "Museum-grade stretched canvas with vibrant UV-resistant pigment inks, ready to hang.",
+    price: 50,
+    originalPrice: 70,
+    stock: 50,
+    category: "Wall Decor",
+    badge: "Popular",
+    status: "active",
+    rating: 4.9,
+    reviews: 89,
+    image: "/images/products/canvas.jpg",
+    images: ["/images/products/canvas.jpg"],
+    imageColor: "#f3f0f7",
+  },
+];
 
 export type OrderStatus =
   | "Payment Verification Failed"
@@ -69,6 +178,9 @@ interface BackendOrder {
 interface AppContextType {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  isAdmin: boolean;
+  products: Product[];
+  refreshProducts: () => Promise<void>;
   loginWithGoogle: () => void;
   logout: () => Promise<void>;
   cart: CartItem[];
@@ -102,6 +214,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
+  const [products, setProducts] = useState<Product[]>(DEFAULT_STORE_PRODUCTS);
+
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -133,6 +247,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return "light";
     }
   });
+
+  const isAdmin = Boolean(
+    user && (user.role === "admin" || user.email?.toLowerCase().trim() === "pkashyap1506@gmail.com")
+  );
+
+  const refreshProducts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/products");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+          setProducts(data.products);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not fetch latest products:", err);
+    }
+  }, []);
 
   // Admin settings for COD and checkout rules
   const adminSettings = {
@@ -194,11 +326,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     checkServerSession();
+    refreshProducts();
 
     return () => {
       isMounted = false;
     };
-  }, [refreshOrders]);
+  }, [refreshOrders, refreshProducts]);
 
   // Sync changes to localStorage and DOM for theme
   useEffect(() => {
@@ -332,6 +465,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         user,
         setUser,
+        isAdmin,
+        products,
+        refreshProducts,
         loginWithGoogle,
         logout,
         cart,
