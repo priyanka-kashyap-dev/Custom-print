@@ -46,31 +46,53 @@ export async function POST(req: Request) {
       }
     }
 
-    // 2. Fallback: Save to local public/uploads directory (ideal for local development)
-    const uploadDir = path.resolve(process.cwd(), 'public/uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    // 2. Try saving to local public/uploads directory (ideal for local development)
+    try {
+      const uploadDir = path.resolve(process.cwd(), 'public/uploads');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const ext = path.extname(file.name) || '.jpg';
+      const cleanBase = path
+        .basename(file.name, ext)
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-');
+      const filename = `${cleanBase}-${Date.now()}${ext}`;
+      const filePath = path.join(uploadDir, filename);
+
+      fs.writeFileSync(filePath, buffer);
+
+      const publicUrl = `/uploads/${filename}`;
+
+      return NextResponse.json({
+        success: true,
+        url: publicUrl,
+        filename,
+        provider: 'local',
+        size: buffer.length,
+      });
+    } catch (fsErr: unknown) {
+      console.warn(
+        'Local filesystem write failed (expected in serverless environments like Vercel):',
+        fsErr
+      );
+
+      // 3. Resilient fallback for serverless read-only platforms: return base64 Data URL
+      const mimeType = file.type || 'image/jpeg';
+      const base64Data = buffer.toString('base64');
+      const dataUrl = `data:${mimeType};base64,${base64Data}`;
+
+      return NextResponse.json({
+        success: true,
+        url: dataUrl,
+        filename: file.name,
+        provider: 'base64',
+        size: buffer.length,
+        message:
+          'Uploaded as Base64 Data URL. To host images on Cloudinary CDN, set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your Vercel Project Settings.',
+      });
     }
-
-    const ext = path.extname(file.name) || '.jpg';
-    const cleanBase = path
-      .basename(file.name, ext)
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '-');
-    const filename = `${cleanBase}-${Date.now()}${ext}`;
-    const filePath = path.join(uploadDir, filename);
-
-    fs.writeFileSync(filePath, buffer);
-
-    const publicUrl = `/uploads/${filename}`;
-
-    return NextResponse.json({
-      success: true,
-      url: publicUrl,
-      filename,
-      provider: 'local',
-      size: buffer.length,
-    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Upload failed';
     return NextResponse.json({ error: message }, { status: 500 });
