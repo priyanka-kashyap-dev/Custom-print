@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { OAuth2Client } from 'google-auth-library';
+import crypto from 'crypto';
 
 export interface SessionUser {
   id: string;
@@ -140,4 +141,37 @@ export async function verifyGoogleIdToken(idToken: string): Promise<{
     name: payload.name || payload.email.split('@')[0],
     picture: payload.picture,
   };
+}
+
+/**
+ * Hashes a plaintext password using crypto scrypt with random salt.
+ */
+export function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derivedKey = crypto.scryptSync(password, salt, 64);
+  return `${salt}:${derivedKey.toString('hex')}`;
+}
+
+/**
+ * Verifies a plaintext password against a salt:hash string using constant-time comparison.
+ */
+export function verifyPassword(password: string, combinedHash: string): boolean {
+  try {
+    const [salt, key] = combinedHash.split(':');
+    if (!salt || !key) return false;
+    const keyBuffer = Buffer.from(key, 'hex');
+    const derivedKey = crypto.scryptSync(password, salt, 64);
+    return crypto.timingSafeEqual(keyBuffer, derivedKey);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Generates a cryptographically random password reset token and 1-hour expiration date.
+ */
+export function generateResetToken(): { token: string; expires: Date } {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour validity
+  return { token, expires };
 }

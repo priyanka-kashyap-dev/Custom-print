@@ -1,9 +1,12 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IUser extends Document {
-  googleId: string;
+  googleId?: string;
   email: string;
   name: string;
+  password?: string;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
   avatar?: string;
   role: 'customer' | 'admin';
   createdAt: Date;
@@ -15,8 +18,7 @@ const UserSchema = new Schema<IUser>(
   {
     googleId: {
       type: String,
-      required: [true, 'Google ID (subject identifier) is required'],
-      unique: true,
+      sparse: true,
       index: true,
     },
     email: {
@@ -31,6 +33,18 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: [true, 'User name is required'],
       trim: true,
+    },
+    password: {
+      type: String,
+      select: false,
+    },
+    resetPasswordToken: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
+    resetPasswordExpires: {
+      type: Date,
     },
     avatar: {
       type: String,
@@ -55,7 +69,11 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
-// Prevent model overwrite during hot-reloads
-const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+// In development or schema updates, ensure fresh schema registration
+if (mongoose.models && mongoose.models.User) {
+  delete (mongoose.models as Record<string, unknown>).User;
+}
+
+const User: Model<IUser> = mongoose.model<IUser>('User', UserSchema);
 
 export default User;

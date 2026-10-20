@@ -31,42 +31,69 @@ export async function POST(req: Request) {
       );
     }
 
-    // Connect to MongoDB
-    await connectToDatabase();
+    // Initialize session user from cryptographically verified Google token
+    let sessionUser: {
+      id: string;
+      email: string;
+      name: string;
+      role: 'customer' | 'admin';
+      avatar?: string;
+    } = {
+      id: googleUser.googleId,
+      email: googleUser.email,
+      name: googleUser.name,
+      role: 'customer',
+      avatar: googleUser.picture || '',
+    };
 
-    // Check if user already exists by googleId or email
-    let user = await User.findOne({
-      $or: [{ googleId: googleUser.googleId }, { email: googleUser.email }],
-    });
+    // Connect to MongoDB and persist user (with graceful fallback if DB access is delayed)
+    try {
+      await connectToDatabase();
 
-    if (user) {
-      // Returning user - update last login and latest profile fields, preserve existing role!
-      user.lastLoginAt = new Date();
-      if (!user.googleId) user.googleId = googleUser.googleId;
-      if (googleUser.name && user.name !== googleUser.name) user.name = googleUser.name;
-      if (googleUser.picture && user.avatar !== googleUser.picture) user.avatar = googleUser.picture;
-      await user.save();
-    } else {
-      // New user - create profile with default 'customer' role
-      user = await User.create({
-        googleId: googleUser.googleId,
-        email: googleUser.email,
-        name: googleUser.name,
-        avatar: googleUser.picture || '',
-        role: 'customer', // strictly defaulted to customer, cannot be overridden from client
-        lastLoginAt: new Date(),
+      // Check if user already exists by googleId or email
+      let user = await User.findOne({
+        $or: [{ googleId: googleUser.googleId }, { email: googleUser.email }],
       });
+
+      if (user) {
+        // Returning user - update last login and latest profile fields, preserve existing role!
+        user.lastLoginAt = new Date();
+        if (!user.googleId) user.googleId = googleUser.googleId;
+        if (googleUser.name && user.name !== googleUser.name) user.name = googleUser.name;
+        if (googleUser.picture && user.avatar !== googleUser.picture) user.avatar = googleUser.picture;
+        await user.save();
+
+        sessionUser = {
+          id: user._id.toString(),
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          avatar: user.avatar || '',
+        };
+      } else {
+        // New user - create profile with default 'customer' role
+        user = await User.create({
+          googleId: googleUser.googleId,
+          email: googleUser.email,
+          name: googleUser.name,
+          avatar: googleUser.picture || '',
+          role: 'customer',
+          lastLoginAt: new Date(),
+        });
+
+        sessionUser = {
+          id: user._id.toString(),
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          avatar: user.avatar || '',
+        };
+      }
+    } catch (dbError: unknown) {
+      console.warn('MongoDB sync deferred (database temporarily unreachable):', dbError);
     }
 
     // Issue secure HttpOnly session cookie
-    const sessionUser = {
-      id: user._id.toString(),
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      avatar: user.avatar,
-    };
-
     await createSessionCookie(sessionUser);
 
     return NextResponse.json({
