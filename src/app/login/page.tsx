@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useAppContext } from "@/context/AppContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, LogIn, UserPlus, ShieldCheck, AlertCircle, CheckCircle, ShieldAlert } from "lucide-react";
+import { Mail, Lock, LogIn, UserPlus, ShieldCheck, AlertCircle, CheckCircle, ShieldAlert, Eye, EyeOff } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
@@ -19,6 +19,7 @@ function LoginForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -293,7 +294,7 @@ function LoginForm() {
           <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
             <Lock size={18} style={{ position: "absolute", left: "12px", color: "var(--text-light)" }} />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -301,7 +302,7 @@ function LoginForm() {
               minLength={6}
               style={{
                 width: "100%",
-                padding: "12px 12px 12px 40px",
+                padding: "12px 42px 12px 40px",
                 borderRadius: "8px",
                 border: "1px solid var(--border-color)",
                 background: "var(--background-color)",
@@ -311,6 +312,25 @@ function LoginForm() {
                 transition: "var(--transition)",
               }}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              style={{
+                position: "absolute",
+                right: "12px",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--text-light)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "4px",
+              }}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
         </div>
 
