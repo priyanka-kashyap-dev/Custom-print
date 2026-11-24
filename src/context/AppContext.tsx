@@ -414,6 +414,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               role: data.user.role || "customer",
             });
             refreshOrders();
+          } else if (!data.authenticated && isMounted) {
+            setUser(null);
+            localStorage.removeItem("cp_user");
           }
         }
       } catch {

@@ -61,7 +61,7 @@ const loadRazorpayScript = (): Promise<boolean> => {
 
 export default function CartPage() {
   const router = useRouter();
-  const { cart, removeFromCart, clearCart, cartTotal, user, savedAddress, setSavedAddress } =
+  const { cart, removeFromCart, clearCart, cartTotal, user, setUser, savedAddress, setSavedAddress } =
     useAppContext();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("UPI");
@@ -196,6 +196,12 @@ export default function CartPage() {
       const createData = await createRes.json();
 
       if (!createRes.ok || !createData.success) {
+        if (createRes.status === 401) {
+          setUser(null);
+          setErrorMessage("Your session has expired. Please sign in to proceed with checkout.");
+          router.push("/login?redirect=/cart");
+          return;
+        }
         throw new Error(createData.error || "Failed to create order on server.");
       }
 
