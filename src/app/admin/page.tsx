@@ -27,6 +27,19 @@ import {
   X,
   Sparkles,
   Link2,
+  QrCode,
+  CreditCard,
+  Banknote,
+  Truck,
+  ShoppingBag,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  CheckCircle,
+  Navigation,
+  Boxes,
+  RotateCcw,
+  Eye,
 } from "lucide-react";
 import { useAppContext, Product } from "@/context/AppContext";
 import Navbar from "@/components/Navbar";
@@ -34,6 +47,7 @@ import Footer from "@/components/Footer";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 import styles from "./AdminDashboard.module.css";
 import { isAdminEmail } from "@/lib/auth-constants";
+import ConfirmModal from "@/components/ConfirmModal";
 
 interface ExtendedProduct extends Product {
   originalPrice?: number;
@@ -44,6 +58,57 @@ interface ExtendedProduct extends Product {
   updatedAt?: string;
 }
 
+interface AdminOrder {
+  _id: string;
+  orderId: string;
+  createdAt: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  items: Array<{
+    productId?: string | number;
+    title: string;
+    price: number;
+    quantity: number;
+    image?: string;
+    imageColor?: string;
+    customDesign?: {
+      text?: string;
+      textColor?: string;
+      fontFamily?: string;
+    };
+  }>;
+  subtotal: number;
+  deliveryCharge?: number;
+  codCharge?: number;
+  total: number;
+  status: string;
+  paymentMethod: "UPI" | "Card" | "COD";
+  paymentStatus: string;
+  transactionId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  paymentDate?: string;
+  deliveryDistanceKm?: number;
+  shippingAddress?: {
+    fullName?: string;
+    phone?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+  };
+  paymentHistory?: Array<{
+    status: string;
+    paymentStatus?: string;
+    timestamp: string;
+    note?: string;
+    updatedBy?: string;
+    transactionId?: string;
+  }>;
+}
+
 export default function AdminPage() {
   const { user, isAdmin, logout, refreshProducts } = useAppContext();
   const [activeTab, setActiveTab] = useState<"stock" | "add" | "upload" | "orders">("stock");
@@ -52,6 +117,26 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Custom confirmation modal state (replaces native window.confirm)
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message?: string;
+    confirmText?: string;
+    cancelText?: string;
+    variant?: "danger" | "warning" | "primary" | "success";
+    isLoading?: boolean;
+    children?: React.ReactNode;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
+
+  // Refund prompt modal state (replaces native window.prompt)
+  const [refundModalState, setRefundModalState] = useState<{
+    orderId: string;
+    amount: number;
+    reason: string;
+  } | null>(null);
 
   // Edit row states
   const [editingRows, setEditingRows] = useState<Record<string, { price: number; stock: number; originalPrice: number; status: string }>>({});
@@ -89,6 +174,15 @@ export default function AdminPage() {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Orders Management States
+  const [adminOrders, setAdminOrders] = useState<AdminOrder[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [filterMethod, setFilterMethod] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [orderSearch, setOrderSearch] = useState<string>("");
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+
   const isAuthorized = user && (isAdminEmail(user.email) || isAdmin || user.role === "admin");
 
   const fetchAdminProducts = useCallback(async () => {
@@ -119,11 +213,116 @@ export default function AdminPage() {
     }
   }, []);
 
+  const fetchAdminOrders = useCallback(async () => {
+    setOrdersLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (filterMethod !== "all") params.append("method", filterMethod);
+      if (filterStatus !== "all") params.append("paymentStatus", filterStatus);
+      if (orderSearch.trim()) params.append("search", orderSearch.trim());
+
+      const res = await fetch(`/api/orders?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.orders && Array.isArray(data.orders)) {
+          setAdminOrders(data.orders);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not load admin orders:", err);
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, [filterMethod, filterStatus, orderSearch]);
+
   useEffect(() => {
     if (isAuthorized) {
       fetchAdminProducts();
+      fetchAdminOrders();
     }
-  }, [isAuthorized, fetchAdminProducts]);
+  }, [isAuthorized, fetchAdminProducts, fetchAdminOrders]);
+
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+    setUpdatingOrderId(orderId);
+    try {
+      const res = await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, status: newStatus }),
+      });
+      if (res.ok) {
+        showNotification(`Order #${orderId} status updated to "${newStatus}"`);
+        await fetchAdminOrders();
+      } else {
+        const err = await res.json();
+        showNotification(err.error || "Failed to update order status", "error");
+      }
+    } catch {
+      showNotification("Network error updating order status", "error");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const handleCollectCodCash = (orderId: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Collect COD Payment",
+      message: `Confirm collection of cash for Order #${orderId} and mark payment as SUCCESS (PAID)?`,
+      confirmText: "Yes, Mark Paid",
+      cancelText: "Cancel",
+      variant: "success",
+      onConfirm: async () => {
+        setUpdatingOrderId(orderId);
+        try {
+          const res = await fetch("/api/orders", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId, action: "mark_cod_paid" }),
+          });
+          if (res.ok) {
+            showNotification(`Payment for Order #${orderId} marked as SUCCESS (COD Collected)`);
+            await fetchAdminOrders();
+          } else {
+            const err = await res.json();
+            showNotification(err.error || "Failed to record cash collection", "error");
+          }
+        } catch {
+          showNotification("Network error updating payment", "error");
+        } finally {
+          setUpdatingOrderId(null);
+          setConfirmConfig(null);
+        }
+      },
+    });
+  };
+
+  const handleRefundOrder = (orderId: string, currentTotal: number) => {
+    setRefundModalState({
+      orderId,
+      amount: currentTotal,
+      reason: "Customer cancellation / return request",
+    });
+  };
+
+  // Orders revenue and KPI calculations
+  const totalRevenue = adminOrders
+    .filter((o) => ["SUCCESS", "PAID", "COD COLLECTED"].includes(String(o.paymentStatus).toUpperCase()))
+    .reduce((sum, o) => sum + (o.total || 0), 0);
+
+  const successfulPaymentsCount = adminOrders.filter((o) =>
+    ["SUCCESS", "PAID", "COD COLLECTED"].includes(String(o.paymentStatus).toUpperCase())
+  ).length;
+
+  const pendingPaymentsCount = adminOrders.filter((o) =>
+    ["PENDING", "COD PENDING", "VERIFICATION PENDING"].includes(String(o.paymentStatus).toUpperCase())
+  ).length;
+
+  const codCollectionsTotal = adminOrders
+    .filter((o) => o.paymentMethod === "COD" && ["SUCCESS", "PAID", "COD COLLECTED"].includes(String(o.paymentStatus).toUpperCase()))
+    .reduce((sum, o) => sum + (o.total || 0), 0);
+
+  const codOrdersCount = adminOrders.filter((o) => o.paymentMethod === "COD").length;
 
   const showNotification = (text: string, type: "success" | "error" = "success") => {
     setStatusMessage({ type, text });
@@ -182,23 +381,33 @@ export default function AdminPage() {
     }
   };
 
-  const handleDeleteProduct = async (id: string | number, title: string) => {
-    if (!confirm(`Are you sure you want to remove "${title}" from the store?`)) return;
-
-    try {
-      const res = await fetch(`/api/admin/products?id=${id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        showNotification(`"${title}" deleted successfully.`);
-        await fetchAdminProducts();
-        await refreshProducts();
-      } else {
-        showNotification("Failed to delete product.", "error");
-      }
-    } catch {
-      showNotification("Error deleting product.", "error");
-    }
+  const handleDeleteProduct = (id: string | number, title: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Remove Product",
+      message: `Are you sure you want to remove "${title}" from the store? This action cannot be undone.`,
+      confirmText: "Yes, Delete",
+      cancelText: "Cancel",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/products?id=${id}`, {
+            method: "DELETE",
+          });
+          if (res.ok) {
+            showNotification(`"${title}" deleted successfully.`);
+            await fetchAdminProducts();
+            await refreshProducts();
+          } else {
+            showNotification("Failed to delete product.", "error");
+          }
+        } catch {
+          showNotification("Error deleting product.", "error");
+        } finally {
+          setConfirmConfig(null);
+        }
+      },
+    });
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -505,50 +714,100 @@ export default function AdminPage() {
         </div>
 
         {/* Metrics Overview Grid */}
-        <div className={styles.metricsGrid}>
-          <div className={styles.metricCard}>
-            <div className={styles.metricIcon} style={{ background: "rgba(79, 70, 229, 0.1)", color: "var(--primary-color)" }}>
-              <Package size={24} />
+        {activeTab === "orders" ? (
+          <div className={styles.metricsGrid}>
+            <div className={styles.metricCard}>
+              <div className={styles.metricIcon} style={{ background: "rgba(16, 185, 129, 0.12)", color: "#10b981" }}>
+                <DollarSign size={24} />
+              </div>
+              <div className={styles.metricInfo}>
+                <h4>Total Verified Revenue</h4>
+                <p className={styles.metricValue}>₹{totalRevenue}</p>
+              </div>
             </div>
-            <div className={styles.metricInfo}>
-              <h4>Total Catalog Items</h4>
-              <p className={styles.metricValue}>{totalProducts}</p>
-            </div>
-          </div>
 
-          <div className={styles.metricCard}>
-            <div className={styles.metricIcon} style={{ background: "rgba(16, 185, 129, 0.1)", color: "#10b981" }}>
-              <TrendingUp size={24} />
+            <div className={styles.metricCard}>
+              <div className={styles.metricIcon} style={{ background: "rgba(79, 70, 229, 0.12)", color: "var(--primary-color)" }}>
+                <CheckCircle size={24} />
+              </div>
+              <div className={styles.metricInfo}>
+                <h4>Successful Payments</h4>
+                <p className={styles.metricValue}>{successfulPaymentsCount} orders</p>
+              </div>
             </div>
-            <div className={styles.metricInfo}>
-              <h4>Units In Stock</h4>
-              <p className={styles.metricValue}>{totalStock}</p>
-            </div>
-          </div>
 
-          <div className={styles.metricCard}>
-            <div className={styles.metricIcon} style={{ background: "rgba(245, 158, 11, 0.1)", color: "#f59e0b" }}>
-              <AlertTriangle size={24} />
+            <div className={styles.metricCard}>
+              <div className={styles.metricIcon} style={{ background: "rgba(245, 158, 11, 0.12)", color: "#f59e0b" }}>
+                <Clock size={24} />
+              </div>
+              <div className={styles.metricInfo}>
+                <h4>Pending Payments</h4>
+                <p className={styles.metricValue}>{pendingPaymentsCount} orders</p>
+              </div>
             </div>
-            <div className={styles.metricInfo}>
-              <h4>Low Stock Items</h4>
-              <p className={styles.metricValue}>{lowStockCount}</p>
-            </div>
-          </div>
 
-          <div className={styles.metricCard}>
-            <div className={styles.metricIcon} style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444" }}>
-              <Layers size={24} />
-            </div>
-            <div className={styles.metricInfo}>
-              <h4>Out of Stock</h4>
-              <p className={styles.metricValue}>{outOfStockCount}</p>
+            <div className={styles.metricCard}>
+              <div className={styles.metricIcon} style={{ background: "rgba(139, 92, 246, 0.12)", color: "#8b5cf6" }}>
+                <Banknote size={24} />
+              </div>
+              <div className={styles.metricInfo}>
+                <h4>COD Collections</h4>
+                <p className={styles.metricValue}>₹{codCollectionsTotal} <span style={{ fontSize: "0.85rem", fontWeight: 500, color: "var(--text-light)" }}>({codOrdersCount} COD)</span></p>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className={styles.metricsGrid}>
+            <div className={styles.metricCard}>
+              <div className={styles.metricIcon} style={{ background: "rgba(79, 70, 229, 0.1)", color: "var(--primary-color)" }}>
+                <Package size={24} />
+              </div>
+              <div className={styles.metricInfo}>
+                <h4>Total Catalog Items</h4>
+                <p className={styles.metricValue}>{totalProducts}</p>
+              </div>
+            </div>
+
+            <div className={styles.metricCard}>
+              <div className={styles.metricIcon} style={{ background: "rgba(16, 185, 129, 0.1)", color: "#10b981" }}>
+                <TrendingUp size={24} />
+              </div>
+              <div className={styles.metricInfo}>
+                <h4>Units In Stock</h4>
+                <p className={styles.metricValue}>{totalStock}</p>
+              </div>
+            </div>
+
+            <div className={styles.metricCard}>
+              <div className={styles.metricIcon} style={{ background: "rgba(245, 158, 11, 0.1)", color: "#f59e0b" }}>
+                <AlertTriangle size={24} />
+              </div>
+              <div className={styles.metricInfo}>
+                <h4>Low Stock Items</h4>
+                <p className={styles.metricValue}>{lowStockCount}</p>
+              </div>
+            </div>
+
+            <div className={styles.metricCard}>
+              <div className={styles.metricIcon} style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444" }}>
+                <Layers size={24} />
+              </div>
+              <div className={styles.metricInfo}>
+                <h4>Out of Stock</h4>
+                <p className={styles.metricValue}>{outOfStockCount}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Navigation Tabs */}
         <div className={styles.tabsBar}>
+          <button
+            onClick={() => setActiveTab("orders")}
+            className={`${styles.tabBtn} ${activeTab === "orders" ? styles.activeTabBtn : ""}`}
+          >
+            <ShoppingBag size={18} /> Orders & Payments ({adminOrders.length})
+          </button>
           <button
             onClick={() => setActiveTab("stock")}
             className={`${styles.tabBtn} ${activeTab === "stock" ? styles.activeTabBtn : ""}`}
@@ -568,6 +827,496 @@ export default function AdminPage() {
             <Upload size={18} /> Upload Custom Images ({uploadedImages.length})
           </button>
         </div>
+
+        {/* TAB 0: Orders & Payments Management */}
+        {activeTab === "orders" && (
+          <div className={styles.panelCard}>
+            <div className={styles.panelHeader}>
+              <div>
+                <h2>Order Management & Gateway Payment Verification</h2>
+                <p style={{ color: "var(--text-light)", fontSize: "0.88rem", margin: "4px 0 0" }}>
+                  Monitor live transactions, verify payment signatures, manage COD collections, and update 8-stage printing progress.
+                </p>
+              </div>
+
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                <button
+                  onClick={fetchAdminOrders}
+                  className={styles.storeLinkBtn}
+                  disabled={ordersLoading}
+                  style={{ padding: "8px 14px", fontSize: "0.85rem" }}
+                  title="Reload live orders"
+                >
+                  <RefreshCw size={14} className={ordersLoading ? "spin" : ""} /> Refresh Orders
+                </button>
+              </div>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "12px",
+                alignItems: "center",
+                marginBottom: "20px",
+                background: "var(--background-color)",
+                padding: "14px 16px",
+                borderRadius: "12px",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              {/* Search */}
+              <div style={{ flex: "1 1 240px", minWidth: "200px", position: "relative" }}>
+                <Search
+                  size={16}
+                  color="var(--text-light)"
+                  style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }}
+                />
+                <input
+                  type="text"
+                  placeholder="Search by Order ID, customer, email, txn ID..."
+                  value={orderSearch}
+                  onChange={(e) => setOrderSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") fetchAdminOrders();
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px 8px 36px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-color)",
+                    background: "var(--surface-color)",
+                    fontSize: "0.88rem",
+                  }}
+                />
+              </div>
+
+              {/* Method Filter */}
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontSize: "0.85rem", color: "var(--text-light)", fontWeight: 500 }}>Method:</span>
+                <select
+                  value={filterMethod}
+                  onChange={(e) => setFilterMethod(e.target.value)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-color)",
+                    background: "var(--surface-color)",
+                    fontSize: "0.85rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  <option value="all">All Methods</option>
+                  <option value="UPI">UPI / QR Code</option>
+                  <option value="Card">Credit / Debit Card</option>
+                  <option value="COD">Cash on Delivery (COD)</option>
+                </select>
+              </div>
+
+              {/* Status Filter */}
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontSize: "0.85rem", color: "var(--text-light)", fontWeight: 500 }}>Status:</span>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-color)",
+                    background: "var(--surface-color)",
+                    fontSize: "0.85rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  <option value="all">All Payment Statuses</option>
+                  <option value="SUCCESS">SUCCESS (Paid)</option>
+                  <option value="PENDING">PENDING (Unpaid / COD)</option>
+                  <option value="FAILED">FAILED</option>
+                  <option value="REFUNDED">REFUNDED</option>
+                </select>
+              </div>
+
+              <button
+                onClick={fetchAdminOrders}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  background: "var(--primary-color)",
+                  color: "#fff",
+                  border: "none",
+                  fontWeight: 600,
+                  fontSize: "0.85rem",
+                  cursor: "pointer",
+                }}
+              >
+                Apply Filters
+              </button>
+            </div>
+
+            {/* Orders Table */}
+            {ordersLoading ? (
+              <div style={{ textAlign: "center", padding: "40px 0" }}>
+                <RefreshCw size={32} className="spin" style={{ color: "var(--primary-color)" }} />
+                <p style={{ marginTop: "12px", color: "var(--text-light)" }}>Fetching orders and gateway sync...</p>
+              </div>
+            ) : adminOrders.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px 0" }}>
+                <ShoppingBag size={48} color="var(--border-color)" style={{ margin: "0 auto 12px" }} />
+                <h3>No orders match your filter criteria</h3>
+                <p style={{ color: "var(--text-light)" }}>Try clearing search keywords or switching filters.</p>
+              </div>
+            ) : (
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Order ID & Date</th>
+                      <th>Customer</th>
+                      <th>Payment & Txn ID</th>
+                      <th>Delivery & COD</th>
+                      <th>Total</th>
+                      <th>Order Progress</th>
+                      <th>Payment Status</th>
+                      <th style={{ textAlign: "right" }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminOrders.map((ord) => {
+                      const isCOD = ord.paymentMethod === "COD";
+                      const pStatus = String(ord.paymentStatus || "").toUpperCase();
+                      const isPaid = pStatus === "SUCCESS" || pStatus === "PAID" || pStatus === "COD COLLECTED";
+                      const isPending = pStatus === "PENDING" || pStatus === "COD PENDING" || pStatus === "VERIFICATION PENDING";
+                      const isRefunded = pStatus === "REFUNDED" || pStatus === "REFUND REQUESTED";
+                      const isExpanded = expandedOrderId === ord.orderId;
+
+                      return (
+                        <tr key={ord.orderId || ord._id} style={{ borderBottom: isExpanded ? "none" : undefined }}>
+                          {/* Order ID & Date */}
+                          <td>
+                            <div style={{ fontWeight: 700, color: "var(--primary-color)" }}>#{ord.orderId}</div>
+                            <div style={{ fontSize: "0.78rem", color: "var(--text-light)" }}>
+                              {new Date(ord.createdAt).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </div>
+                          </td>
+
+                          {/* Customer */}
+                          <td>
+                            <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{ord.customerName}</div>
+                            <div style={{ fontSize: "0.8rem", color: "var(--text-light)", wordBreak: "break-all" }}>
+                              {ord.customerEmail}
+                            </div>
+                            {ord.customerPhone && (
+                              <div style={{ fontSize: "0.75rem", color: "var(--text-light)" }}>📞 {ord.customerPhone}</div>
+                            )}
+                          </td>
+
+                          {/* Payment & Txn ID */}
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 600, fontSize: "0.85rem" }}>
+                              {ord.paymentMethod === "UPI" && <QrCode size={15} color="var(--primary-color)" />}
+                              {ord.paymentMethod === "Card" && <CreditCard size={15} color="var(--primary-color)" />}
+                              {ord.paymentMethod === "COD" && <Banknote size={15} color="var(--primary-color)" />}
+                              <span>{ord.paymentMethod === "UPI" ? "UPI QR" : ord.paymentMethod === "Card" ? "Card" : "COD"}</span>
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "var(--text-light)",
+                                maxWidth: "160px",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                              title={ord.transactionId || ord.razorpayPaymentId || "N/A"}
+                            >
+                              Txn: {ord.transactionId || ord.razorpayPaymentId || (isCOD ? "Cash on Delivery" : "Pending Gateway")}
+                            </div>
+                          </td>
+
+                          {/* Delivery Distance & COD */}
+                          <td>
+                            <div style={{ fontSize: "0.85rem" }}>
+                              <Truck size={14} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} />
+                              {ord.deliveryDistanceKm ? `${ord.deliveryDistanceKm} KM` : "Local NCR"}
+                            </div>
+                            {isCOD && (
+                              <div style={{ fontSize: "0.78rem", color: "#b45309", fontWeight: 600 }}>
+                                COD Charge: ₹{ord.codCharge || 0}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Total */}
+                          <td>
+                            <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "var(--text-color)" }}>
+                              ₹{ord.total}
+                            </div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-light)" }}>{ord.items.length} item(s)</div>
+                          </td>
+
+                          {/* Order Progress (8 stages) */}
+                          <td>
+                            <select
+                              value={ord.status}
+                              disabled={updatingOrderId === ord.orderId}
+                              onChange={(e) => handleUpdateOrderStatus(ord.orderId, e.target.value)}
+                              style={{
+                                padding: "6px 10px",
+                                borderRadius: "8px",
+                                border: "1px solid var(--border-color)",
+                                background: "var(--surface-color)",
+                                fontSize: "0.82rem",
+                                fontWeight: 600,
+                                color: "var(--primary-color)",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <option value="Order Placed">1. Order Placed</option>
+                              <option value="Payment Confirmed">2. Payment Confirmed</option>
+                              <option value="Order Processing">3. Order Processing</option>
+                              <option value="Printing in Progress">4. Printing in Progress</option>
+                              <option value="Ready for Dispatch">5. Ready for Dispatch</option>
+                              <option value="Shipped">6. Shipped</option>
+                              <option value="Out for Delivery">7. Out for Delivery</option>
+                              <option value="Delivered">8. Delivered</option>
+                              <option value="Cancelled">❌ Cancelled</option>
+                              <option value="Payment Verification Failed">⚠️ Verification Failed</option>
+                            </select>
+                          </td>
+
+                          {/* Payment Status Badge */}
+                          <td>
+                            <span
+                              style={{
+                                display: "inline-block",
+                                padding: "4px 10px",
+                                borderRadius: "12px",
+                                fontSize: "0.78rem",
+                                fontWeight: 700,
+                                background: isPaid
+                                  ? "rgba(16, 185, 129, 0.15)"
+                                  : isPending
+                                  ? "rgba(245, 158, 11, 0.15)"
+                                  : isRefunded
+                                  ? "rgba(139, 92, 246, 0.15)"
+                                  : "rgba(239, 68, 68, 0.15)",
+                                color: isPaid
+                                  ? "#059669"
+                                  : isPending
+                                  ? "#b45309"
+                                  : isRefunded
+                                  ? "#7c3aed"
+                                  : "#dc2626",
+                                border: `1px solid ${
+                                  isPaid ? "#a7f3d0" : isPending ? "#fde68a" : isRefunded ? "#ddd6fe" : "#fecaca"
+                                }`,
+                              }}
+                            >
+                              {isPaid ? "PAID" : isPending ? "PENDING" : isRefunded ? "REFUNDED" : "FAILED"}
+                            </span>
+                          </td>
+
+                          {/* Quick Actions */}
+                          <td style={{ textAlign: "right" }}>
+                            <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end", flexWrap: "wrap" }}>
+                              {isCOD && !isPaid && (
+                                <button
+                                  onClick={() => handleCollectCodCash(ord.orderId)}
+                                  disabled={updatingOrderId === ord.orderId}
+                                  className={styles.actionBtn}
+                                  style={{
+                                    background: "#10b981",
+                                    color: "#fff",
+                                    padding: "4px 10px",
+                                    fontSize: "0.78rem",
+                                    fontWeight: 600,
+                                    borderRadius: "6px",
+                                  }}
+                                  title="Record cash collected from customer and mark as PAID"
+                                >
+                                  Collect ₹{ord.total}
+                                </button>
+                              )}
+
+                              {isPaid && !isRefunded && (
+                                <button
+                                  onClick={() => handleRefundOrder(ord.orderId, ord.total)}
+                                  disabled={updatingOrderId === ord.orderId}
+                                  className={styles.actionBtn}
+                                  style={{
+                                    background: "rgba(139, 92, 246, 0.1)",
+                                    color: "#7c3aed",
+                                    padding: "4px 8px",
+                                    fontSize: "0.78rem",
+                                    borderRadius: "6px",
+                                  }}
+                                  title="Initiate refund to customer"
+                                >
+                                  <RotateCcw size={12} /> Refund
+                                </button>
+                              )}
+
+                              <button
+                                onClick={() => setExpandedOrderId(isExpanded ? null : ord.orderId)}
+                                className={styles.actionBtn}
+                                style={{ padding: "4px 8px", fontSize: "0.78rem" }}
+                                title="Expand details"
+                              >
+                                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Expanded Order Detail Drawer / Modal for the selected order */}
+            {expandedOrderId && (() => {
+              const ord = adminOrders.find((o) => o.orderId === expandedOrderId);
+              if (!ord) return null;
+
+              return (
+                <div
+                  style={{
+                    marginTop: "20px",
+                    background: "var(--background-color)",
+                    padding: "20px",
+                    borderRadius: "14px",
+                    border: "2px solid var(--primary-color)",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                    <h3 style={{ margin: 0, fontSize: "1.15rem" }}>
+                      Order Audit & Inspection: <span style={{ color: "var(--primary-color)" }}>#{ord.orderId}</span>
+                    </h3>
+                    <button
+                      onClick={() => setExpandedOrderId(null)}
+                      style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-light)" }}
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+                    {/* Item Customizations */}
+                    <div style={{ background: "var(--surface-color)", padding: "14px", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+                      <h4 style={{ margin: "0 0 10px", fontSize: "0.92rem", fontWeight: 700 }}>
+                        Ordered Items ({ord.items.length})
+                      </h4>
+                      {ord.items.map((item, idx) => (
+                        <div key={idx} style={{ padding: "8px 0", borderBottom: "1px solid var(--border-color)" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", fontWeight: 600 }}>
+                            <span>{item.title}</span>
+                            <span>₹{item.price * item.quantity}</span>
+                          </div>
+                          {item.customDesign?.text && (
+                            <div style={{ fontSize: "0.78rem", color: "var(--primary-color)", marginTop: "2px" }}>
+                              Custom Text: &quot;{item.customDesign.text}&quot;
+                            </div>
+                          )}
+                          <div style={{ fontSize: "0.75rem", color: "var(--text-light)" }}>Qty: {item.quantity} × ₹{item.price}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Shipping Address */}
+                    <div style={{ background: "var(--surface-color)", padding: "14px", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+                      <h4 style={{ margin: "0 0 10px", fontSize: "0.92rem", fontWeight: 700 }}>
+                        Delivery Address & Distance
+                      </h4>
+                      {ord.shippingAddress ? (
+                        <div style={{ fontSize: "0.85rem", lineHeight: 1.5 }}>
+                          <p style={{ margin: "0 0 4px", fontWeight: 700 }}>{ord.shippingAddress.fullName || ord.customerName}</p>
+                          <p style={{ margin: 0, color: "var(--text-light)" }}>
+                            {ord.shippingAddress.addressLine1}
+                            {ord.shippingAddress.addressLine2 ? `, ${ord.shippingAddress.addressLine2}` : ""}
+                            <br />
+                            {ord.shippingAddress.city}, {ord.shippingAddress.state} {ord.shippingAddress.postalCode}
+                            <br />
+                            Phone: {ord.shippingAddress.phone || "N/A"}
+                          </p>
+                          <div style={{ marginTop: "8px", fontWeight: 600, color: "var(--primary-color)" }}>
+                            Distance: {ord.deliveryDistanceKm || 12} KM • COD Charge: ₹{ord.codCharge || 0}
+                          </div>
+                        </div>
+                      ) : (
+                        <p style={{ color: "var(--text-light)", fontSize: "0.85rem" }}>No shipping address recorded</p>
+                      )}
+                    </div>
+
+                    {/* Gateway Payment Details & Audit History */}
+                    <div style={{ background: "var(--surface-color)", padding: "14px", borderRadius: "10px", border: "1px solid var(--border-color)", gridColumn: "1 / -1" }}>
+                      <h4 style={{ margin: "0 0 10px", fontSize: "0.92rem", fontWeight: 700 }}>
+                        Gateway References & Payment Audit Trail
+                      </h4>
+                      <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", fontSize: "0.85rem", marginBottom: "14px" }}>
+                        <div>
+                          <span style={{ color: "var(--text-light)", display: "block", fontSize: "0.75rem" }}>Payment ID</span>
+                          <strong>{ord.transactionId || ord.razorpayPaymentId || "None"}</strong>
+                        </div>
+                        <div>
+                          <span style={{ color: "var(--text-light)", display: "block", fontSize: "0.75rem" }}>Gateway Order ID</span>
+                          <strong>{ord.razorpayOrderId || "None"}</strong>
+                        </div>
+                        <div>
+                          <span style={{ color: "var(--text-light)", display: "block", fontSize: "0.75rem" }}>Payment Method</span>
+                          <strong>{ord.paymentMethod}</strong>
+                        </div>
+                        <div>
+                          <span style={{ color: "var(--text-light)", display: "block", fontSize: "0.75rem" }}>Payment Status</span>
+                          <strong style={{ color: ord.paymentStatus === "SUCCESS" ? "var(--success-color)" : "#b45309" }}>
+                            {ord.paymentStatus}
+                          </strong>
+                        </div>
+                      </div>
+
+                      {/* Audit Log Events */}
+                      {ord.paymentHistory && ord.paymentHistory.length > 0 && (
+                        <div>
+                          <span style={{ fontSize: "0.8rem", fontWeight: 700, display: "block", marginBottom: "6px" }}>
+                            Event History:
+                          </span>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                            {ord.paymentHistory.map((h, hIdx) => (
+                              <div
+                                key={hIdx}
+                                style={{
+                                  fontSize: "0.78rem",
+                                  background: "var(--background-color)",
+                                  padding: "6px 10px",
+                                  borderRadius: "6px",
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  flexWrap: "wrap",
+                                }}
+                              >
+                                <span>
+                                  <strong>[{h.status}]</strong> {h.note || "Status change recorded"}
+                                </span>
+                                <span style={{ color: "var(--text-light)" }}>
+                                  {new Date(h.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} • By {h.updatedBy || "System"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
         {/* TAB 1: Stock & Price Management */}
         {activeTab === "stock" && (
@@ -1210,6 +1959,97 @@ export default function AdminPage() {
             </div>
           )}
         </AnimatePresence>
+
+        {/* Admin Confirmation Modal */}
+        {confirmConfig && (
+          <ConfirmModal
+            isOpen={confirmConfig.isOpen}
+            title={confirmConfig.title}
+            message={confirmConfig.message}
+            confirmText={confirmConfig.confirmText}
+            cancelText={confirmConfig.cancelText}
+            variant={confirmConfig.variant}
+            isLoading={confirmConfig.isLoading}
+            onConfirm={confirmConfig.onConfirm}
+            onClose={() => setConfirmConfig(null)}
+          >
+            {confirmConfig.children}
+          </ConfirmModal>
+        )}
+
+        {/* Admin Refund Prompt Modal */}
+        {refundModalState && (
+          <ConfirmModal
+            isOpen={Boolean(refundModalState)}
+            title="Process Order Refund"
+            message={`Issue full refund of ₹${refundModalState.amount} for Order #${refundModalState.orderId}?`}
+            confirmText="Process Refund"
+            cancelText="Cancel"
+            variant="warning"
+            isLoading={updatingOrderId === refundModalState.orderId}
+            onConfirm={async () => {
+              const orderId = refundModalState.orderId;
+              const reason = refundModalState.reason || "Customer cancellation / return";
+              setUpdatingOrderId(orderId);
+              try {
+                const res = await fetch("/api/orders", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ orderId, action: "refund", refundReason: reason }),
+                });
+                if (res.ok) {
+                  showNotification(`Order #${orderId} marked as REFUNDED`);
+                  await fetchAdminOrders();
+                  setRefundModalState(null);
+                } else {
+                  const err = await res.json();
+                  showNotification(err.error || "Failed to process refund", "error");
+                }
+              } catch {
+                showNotification("Network error processing refund", "error");
+              } finally {
+                setUpdatingOrderId(null);
+              }
+            }}
+            onClose={() => {
+              if (!updatingOrderId) setRefundModalState(null);
+            }}
+          >
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  marginBottom: "8px",
+                  color: "var(--text-color)",
+                }}
+              >
+                Refund Reason / Customer Notes:
+              </label>
+              <input
+                type="text"
+                value={refundModalState.reason}
+                onChange={(e) =>
+                  setRefundModalState((prev) =>
+                    prev ? { ...prev, reason: e.target.value } : null
+                  )
+                }
+                placeholder="e.g. Return request, printing defect, customer cancellation"
+                style={{
+                  width: "100%",
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--background-color)",
+                  color: "var(--text-color)",
+                  fontSize: "0.9rem",
+                  outline: "none",
+                }}
+              />
+            </div>
+          </ConfirmModal>
+        )}
       </main>
 
       <Footer />

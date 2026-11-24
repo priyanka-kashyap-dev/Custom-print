@@ -1,0 +1,28 @@
+{
+  "test_customer_1792512778469@example.com": {
+    "id": "usr_mvgvtrt2",
+    "name": "Test Customer",
+    "email": "test_customer_1792512778469@example.com",
+    "role": "customer",
+    "createdAt": "2026-10-20T16:12:59.578Z",
+    "password": "c230f3f61de1215b230d780d29f538fc:d8dc59b638161990b5c089d2f44449ddf92da5a4c7fa53be4c16fbb581d9ac192fc238892ecf72bf21fc0542ac50cb0829233e117221afa18037bba6094e56e8",
+    "avatar": ""
+  },
+  "test_customer_1792512829493@example.com": {
+    "id": "usr_mvgvuv6t",
+    "name": "Test Customer",
+    "email": "test_customer_1792512829493@example.com",
+    "role": "customer",
+    "createdAt": "2026-10-20T16:13:50.072Z",
+    "password": "a9cda1f96dbf0113b1396dbf96298aa2:921749825a4ff140835043329341c111e68529764ce37bbea5b8bceffb6be6bd3c0b7772a6afef8b10289603be01adbf83ff6d4c04415eff02317acdd283a045",
+    "avatar": ""
+  },
+  "pkashyap1506@gmail.com": {
+    "id": "usr_mvgvy3em",
+    "name": "priyanka kashyap",
+    "email": "pkashyap1506@gmail.com",
+    "role": "customer",
+    "createdAt": "2026-10-20T16:16:20.158Z",
+    "password": "3fb6a6bd12df751217a8f7821c114c69:032fb3c7f0d59b648cc2655081a51b2f8c384c475ebdc0be2782ce33b542c4077b624dc73e342c4200678e920198836faa71a7860fdc8d48abb0f94ce3c769b4"
+  }
+}

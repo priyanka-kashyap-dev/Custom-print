@@ -18,6 +18,7 @@ export default function Contact() {
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -49,9 +50,10 @@ export default function Contact() {
     };
 
     if (!win.webkitSpeechRecognition && !win.SpeechRecognition) {
-      alert("Your browser doesn't support voice input.");
+      setVoiceNotice("Your browser does not support speech recognition. Please type your message.");
       return;
     }
+    setVoiceNotice(null);
     const SpeechRecognitionClass = win.SpeechRecognition || win.webkitSpeechRecognition;
     if (!SpeechRecognitionClass) return;
     const recognition = new SpeechRecognitionClass();

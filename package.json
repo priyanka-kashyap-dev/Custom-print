@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node tests/auth-and-db.test.mjs",
+    "test": "node tests/auth-and-db.test.mjs && node tests/payment-and-orders.test.mjs",
     "check:db": "node scripts/check-db-connection.mjs",
     "check:users": "node scripts/check-users.mjs"
   },
@@ -22,6 +22,7 @@
     "mongoose": "^9.11.2",
     "next": "16.3.5",
     "nodemailer": "^10.0.16",
+    "razorpay": "^2.9.8",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -33,5 +34,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@next/swc-darwin-arm64": "16.3.5"
   }
 }

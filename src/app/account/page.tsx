@@ -294,7 +294,7 @@ export default function AccountPage() {
         </motion.div>
 
         {/* Quick Links Section */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem", marginBottom: "2rem" }}>
           <Link
             href="/orders"
             className="glass"
@@ -323,8 +323,8 @@ export default function AccountPage() {
                 <Package size={24} />
               </div>
               <div>
-                <h3 style={{ fontSize: "1.1rem", marginBottom: "2px" }}>My Orders</h3>
-                <p style={{ color: "var(--text-light)", fontSize: "0.85rem" }}>Track shipping & view past orders</p>
+                <h3 style={{ fontSize: "1.1rem", marginBottom: "2px" }}>My Orders ({orders.length})</h3>
+                <p style={{ color: "var(--text-light)", fontSize: "0.85rem" }}>Track 8-step live progress & deliveries</p>
               </div>
             </div>
             <ArrowRight size={20} color="var(--primary-color)" />
@@ -400,6 +400,94 @@ export default function AccountPage() {
             <ArrowRight size={20} color="var(--success-color)" />
           </Link>
         </div>
+
+        {/* Recent Orders Preview */}
+        {orders.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass"
+            style={{
+              padding: "1.75rem",
+              borderRadius: "var(--border-radius-lg)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+              <h3 style={{ fontSize: "1.2rem", margin: 0, fontWeight: 700 }}>Recent Orders</h3>
+              <Link
+                href="/orders"
+                style={{
+                  color: "var(--primary-color)",
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                View All Orders <ArrowRight size={16} />
+              </Link>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {orders.slice(0, 3).map((ord) => (
+                <Link
+                  key={ord.id}
+                  href="/orders"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    background: "var(--background-color)",
+                    padding: "12px 16px",
+                    borderRadius: "10px",
+                    textDecoration: "none",
+                    color: "inherit",
+                    border: "1px solid var(--border-color)",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                  }}
+                >
+                  <div>
+                    <span style={{ fontWeight: 700, color: "var(--primary-color)", fontSize: "0.95rem" }}>
+                      #{ord.id}
+                    </span>
+                    <span style={{ fontSize: "0.82rem", color: "var(--text-light)", marginLeft: "10px" }}>
+                      {new Date(ord.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    </span>
+                    <span style={{ fontSize: "0.82rem", color: "var(--text-light)", marginLeft: "10px" }}>
+                      • {ord.paymentMethod}
+                    </span>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <span
+                      style={{
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        padding: "3px 8px",
+                        borderRadius: "6px",
+                        background:
+                          ord.paymentStatus === "SUCCESS" || ord.paymentStatus === "Paid"
+                            ? "rgba(16, 185, 129, 0.1)"
+                            : "rgba(245, 158, 11, 0.1)",
+                        color:
+                          ord.paymentStatus === "SUCCESS" || ord.paymentStatus === "Paid" ? "#059669" : "#b45309",
+                      }}
+                    >
+                      {ord.paymentStatus}
+                    </span>
+                    <span style={{ fontWeight: 700, fontSize: "1rem" }}>₹{ord.total}</span>
+                    <span style={{ fontSize: "0.82rem", color: "var(--primary-color)", fontWeight: 600 }}>
+                      {ord.status}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
 
       <Footer />

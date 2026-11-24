@@ -13,6 +13,3 @@ __pycache__/
 # IDE & Editor settings
 .vscode/
 .idea/
-.fallback_users.json
-
-

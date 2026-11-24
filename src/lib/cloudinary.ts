@@ -38,7 +38,7 @@ if (isCloudinaryConfigured()) {
  */
 export async function uploadToCloudinary(
   buffer: Buffer,
-  folder = 'custom_printing_store/products',
+  folder = process.env.CLOUDINARY_FOLDER || 'custom-print/products',
   filename?: string
 ): Promise<UploadApiResponse> {
   if (!isCloudinaryConfigured()) {

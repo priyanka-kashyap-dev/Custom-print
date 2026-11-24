@@ -20,15 +20,24 @@ export type Product = {
   status?: "active" | "out_of_stock" | "draft";
 };
 
-export type CartItem = Product & { quantity: number };
+export type CartItem = Product & {
+  quantity: number;
+  customDesign?: {
+    text?: string;
+    textColor?: string;
+    fontFamily?: string;
+    fontSize?: number;
+    uploadedImage?: string;
+  };
+};
 
 export const DEFAULT_STORE_PRODUCTS: Product[] = [
   {
     id: 1,
     title: "Custom Printed Graphic T-Shirt",
     description: "100% Premium bio-washed cotton with high-definition digital print that never cracks or fades.",
-    price: 25,
-    originalPrice: 35,
+    price: 499,
+    originalPrice: 799,
     stock: 45,
     category: "Apparel",
     badge: "Bestseller",
@@ -43,8 +52,8 @@ export const DEFAULT_STORE_PRODUCTS: Product[] = [
     id: 2,
     title: "Personalized Linen Photo Cushion",
     description: "Soft, breathable premium linen fabric with custom portrait printing and fluffy microfiber insert.",
-    price: 30,
-    originalPrice: 40,
+    price: 399,
+    originalPrice: 599,
     stock: 32,
     category: "Home Decor",
     badge: "Trending",
@@ -59,8 +68,8 @@ export const DEFAULT_STORE_PRODUCTS: Product[] = [
     id: 3,
     title: "Luxury Velvet Heart Pillow",
     description: "Romantic plush velvet heart cushion with gold metallic embroidery & customized names.",
-    price: 35,
-    originalPrice: 48,
+    price: 549,
+    originalPrice: 799,
     stock: 18,
     category: "Gifts",
     badge: "Most Loved",
@@ -75,8 +84,8 @@ export const DEFAULT_STORE_PRODUCTS: Product[] = [
     id: 4,
     title: "Designer Custom Printed Accent Couch",
     description: "Statement living room designer chair with personalized artist fabric and solid wood frame.",
-    price: 299,
-    originalPrice: 399,
+    price: 4999,
+    originalPrice: 6999,
     stock: 8,
     category: "Furniture",
     badge: "Luxury",
@@ -91,8 +100,8 @@ export const DEFAULT_STORE_PRODUCTS: Product[] = [
     id: 5,
     title: "Couple Gift Set (Mugs & Portrait Frame)",
     description: "Matching custom ceramic couple mugs paired with an elegant gold-framed memorial portrait.",
-    price: 40,
-    originalPrice: 55,
+    price: 699,
+    originalPrice: 999,
     stock: 25,
     category: "Gifts",
     badge: "Special Set",
@@ -107,8 +116,8 @@ export const DEFAULT_STORE_PRODUCTS: Product[] = [
     id: 6,
     title: "Gallery Custom Canvas Art Print",
     description: "Museum-grade stretched canvas with vibrant UV-resistant pigment inks, ready to hang.",
-    price: 50,
-    originalPrice: 70,
+    price: 799,
+    originalPrice: 1199,
     stock: 50,
     category: "Wall Decor",
     badge: "Popular",
@@ -122,33 +131,43 @@ export const DEFAULT_STORE_PRODUCTS: Product[] = [
 ];
 
 export type OrderStatus =
-  | "Payment Verification Failed"
   | "Order Placed"
-  | "Processing"
-  | "Printed"
+  | "Payment Confirmed"
+  | "Order Processing"
+  | "Printing in Progress"
+  | "Ready for Dispatch"
   | "Shipped"
+  | "Out for Delivery"
   | "Delivered"
-  | "Cancelled";
+  | "Payment Verification Failed"
+  | "Payment Failed"
+  | "Cancelled"
+  | "Processing"
+  | "Printed";
 
 export type PaymentMethod = "UPI" | "Card" | "COD";
 
 export type PaymentStatus =
+  | "SUCCESS"
+  | "PENDING"
+  | "FAILED"
+  | "REFUNDED"
+  | "Paid"
   | "Pending"
   | "Verification Pending"
-  | "Paid"
-  | "Failed"
   | "COD Pending"
   | "COD Collected"
-  | "Refund Requested"
-  | "Refunded";
+  | "Refund Requested";
 
 export type ShippingAddress = {
   fullName?: string;
   phone?: string;
   addressLine1?: string;
+  addressLine2?: string;
   city?: string;
   state?: string;
   postalCode?: string;
+  country?: string;
 };
 
 export type Order = {
@@ -156,15 +175,23 @@ export type Order = {
   date: string;
   items: CartItem[];
   subtotal: number;
+  customizationCharge?: number;
+  deliveryCharge?: number;
   codCharge: number;
   total: number;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   transactionId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  paymentDate?: string;
   customerName?: string;
   customerEmail?: string;
+  customerPhone?: string;
   shippingAddress?: ShippingAddress;
+  deliveryDistanceKm?: number;
+  deliveryDurationText?: string;
 };
 
 export type User = {
@@ -181,15 +208,23 @@ interface BackendOrder {
   createdAt?: string;
   items?: CartItem[];
   subtotal: number;
+  customizationCharge?: number;
+  deliveryCharge?: number;
   codCharge?: number;
   total: number;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   transactionId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  paymentDate?: string;
   customerName?: string;
   customerEmail?: string;
+  customerPhone?: string;
   shippingAddress?: ShippingAddress;
+  deliveryDistanceKm?: number;
+  deliveryDurationText?: string;
 }
 
 interface AppContextType {
@@ -201,7 +236,7 @@ interface AppContextType {
   loginWithGoogle: () => void;
   logout: () => Promise<void>;
   cart: CartItem[];
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product, customDesign?: CartItem["customDesign"]) => void;
   removeFromCart: (id: number | string) => void;
   clearCart: () => void;
   cartTotal: number;
@@ -210,14 +245,11 @@ interface AppContextType {
   updateOrderStatus: (
     orderId: string,
     status: OrderStatus,
-    paymentStatus?: PaymentStatus
+    paymentStatus?: PaymentStatus,
+    action?: "refund" | "mark_cod_paid" | "update_status"
   ) => Promise<{ success: boolean; error?: string }>;
-  placeOrder: (paymentMethod: PaymentMethod, transactionId?: string) => Promise<void>;
-  adminSettings: {
-    codCharge: number;
-    minCodOrder: number;
-    maxCodOrder: number;
-  };
+  savedAddress: ShippingAddress;
+  setSavedAddress: React.Dispatch<React.SetStateAction<ShippingAddress>>;
   theme: "light" | "dark";
   toggleTheme: () => void;
 }
@@ -225,7 +257,6 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Initialize state lazily from localStorage to satisfy React 19 purity and avoid cascading render warnings
   const [user, setUser] = useState<User | null>(() => {
     if (typeof window === "undefined") return null;
     try {
@@ -255,6 +286,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
+    }
+  });
+
+  const [savedAddress, setSavedAddress] = useState<ShippingAddress>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const saved = localStorage.getItem("cp_shipping_address");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
     }
   });
 
@@ -288,13 +329,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  // Admin settings for COD and checkout rules
-  const adminSettings = {
-    codCharge: 40,
-    minCodOrder: 199,
-    maxCodOrder: 5000,
-  };
-
   // Fetch orders from MongoDB backend
   const refreshOrders = useCallback(async () => {
     try {
@@ -307,15 +341,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             date: o.createdAt || new Date().toISOString(),
             items: o.items || [],
             subtotal: o.subtotal,
+            customizationCharge: o.customizationCharge || 0,
+            deliveryCharge: o.deliveryCharge || 0,
             codCharge: o.codCharge || 0,
             total: o.total,
             status: o.status,
             paymentMethod: o.paymentMethod,
             paymentStatus: o.paymentStatus,
             transactionId: o.transactionId,
+            razorpayOrderId: o.razorpayOrderId,
+            razorpayPaymentId: o.razorpayPaymentId,
+            paymentDate: o.paymentDate,
             customerName: o.customerName,
             customerEmail: o.customerEmail,
+            customerPhone: o.customerPhone,
             shippingAddress: o.shippingAddress,
+            deliveryDistanceKm: o.deliveryDistanceKm,
+            deliveryDurationText: o.deliveryDurationText,
           }));
           setOrders(mappedOrders);
         }
@@ -326,12 +368,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const updateOrderStatus = useCallback(
-    async (orderId: string, status: OrderStatus, paymentStatus?: PaymentStatus) => {
+    async (
+      orderId: string,
+      status: OrderStatus,
+      paymentStatus?: PaymentStatus,
+      action?: "refund" | "mark_cod_paid" | "update_status"
+    ) => {
       try {
         const res = await fetch("/api/orders", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId, status, paymentStatus }),
+          body: JSON.stringify({ orderId, status, paymentStatus, action }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -370,7 +417,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
       } catch {
-        // server auth endpoint not available yet or network issue
+        // auth endpoint unreachable
       }
     }
 
@@ -391,9 +438,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     localStorage.setItem("cp_cart", JSON.stringify(cart));
     localStorage.setItem("cp_orders", JSON.stringify(orders));
+    localStorage.setItem("cp_shipping_address", JSON.stringify(savedAddress));
     localStorage.setItem("cp_theme", theme);
     document.documentElement.setAttribute("data-theme", theme);
-  }, [user, cart, orders, theme]);
+  }, [user, cart, orders, savedAddress, theme]);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
@@ -417,15 +465,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem("cp_orders");
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, customDesign?: CartItem["customDesign"]) => {
     setCart((prev) => {
       const existing = prev.find((item) => String(item.id) === String(product.id));
       if (existing) {
         return prev.map((item) =>
-          String(item.id) === String(product.id) ? { ...item, quantity: item.quantity + 1 } : item
+          String(item.id) === String(product.id)
+            ? { ...item, quantity: item.quantity + 1, ...(customDesign && { customDesign }) }
+            : item
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { ...product, quantity: 1, ...(customDesign && { customDesign }) }];
     });
   };
 
@@ -436,78 +486,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const clearCart = () => setCart([]);
 
   const cartTotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
-
-  const placeOrder = async (paymentMethod: PaymentMethod, transactionId?: string) => {
-    if (cart.length === 0) return;
-
-    let codCharge = 0;
-    let paymentStatus: PaymentStatus = "Pending";
-
-    if (paymentMethod === "COD") {
-      codCharge = adminSettings.codCharge;
-      paymentStatus = "COD Pending";
-    } else if (paymentMethod === "UPI") {
-      paymentStatus = "Verification Pending";
-    } else if (paymentMethod === "Card") {
-      paymentStatus = "Paid";
-    }
-
-    const calculatedTotal = cartTotal + codCharge;
-
-    // Try persisting to MongoDB backend first
-    let persistedOrder: Order | null = null;
-    try {
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: cart,
-          subtotal: cartTotal,
-          codCharge,
-          total: calculatedTotal,
-          paymentMethod,
-          transactionId,
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.order) {
-          persistedOrder = {
-            id: data.order.orderId || data.order._id,
-            date: data.order.createdAt || new Date().toISOString(),
-            items: [...cart],
-            subtotal: cartTotal,
-            codCharge,
-            total: calculatedTotal,
-            status: data.order.status || "Order Placed",
-            paymentMethod,
-            paymentStatus,
-            transactionId,
-          };
-        }
-      }
-    } catch (e) {
-      console.warn("Could not save order directly to database, falling back to local:", e);
-    }
-
-    // Fallback local order if user is offline or not authenticated yet
-    const finalOrder: Order = persistedOrder || {
-      id: "ORD-" + Date.now().toString(36).toUpperCase(),
-      date: new Date().toISOString(),
-      items: [...cart],
-      subtotal: cartTotal,
-      codCharge,
-      total: calculatedTotal,
-      status: "Order Placed",
-      paymentMethod,
-      paymentStatus,
-      transactionId,
-    };
-
-    setOrders((prev) => [finalOrder, ...prev]);
-    clearCart();
-  };
 
   return (
     <AppContext.Provider
@@ -527,8 +505,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         orders,
         refreshOrders,
         updateOrderStatus,
-        placeOrder,
-        adminSettings,
+        savedAddress,
+        setSavedAddress,
         theme,
         toggleTheme,
       }}
